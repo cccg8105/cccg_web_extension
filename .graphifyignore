@@ -1,0 +1,36 @@
+# Dependencias y artefactos de compilacion
+node_modules/
+.plasmo/
+build/
+dist/
+graphify-out/
+backlog/
+
+# Archivos de bloqueo y configuracion de herramientas/build
+package.json
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+tsconfig.json
+tailwind.config.js
+postcss.config.js
+
+# Recursos binarios/imagenes y empaquetados
+assets/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ico
+*.svg
+*.pem
+*.zip
+
+# Archivos del sistema e IDE
+.git/
+.cursor/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log

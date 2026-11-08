@@ -1,0 +1,19 @@
+# Dependencias y artefactos de compilacion
+node_modules/
+.plasmo/
+build/
+dist/
+
+# Archivos de bloqueo y configuracion de herramientas/build
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Recursos binarios, imagenes y empaquetados
+*.pem
+*.zip
+
+# Archivos temporales y del sistema
+.DS_Store
+Thumbs.db
+*.log
