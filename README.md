@@ -6,7 +6,7 @@ Extensión de Chrome construida con **Plasmo**, **React**, **TypeScript** y **Ta
 
 ## Requisitos Previos
 
-- **Node.js** v18 o superior
+- **Node.js** v24 (recomendado v24.4.1 o superior; retrocompatible desde v18)
 - **npm** (incluido con Node.js) o **pnpm**
 - Navegador **Google Chrome** (o cualquier navegador basado en Chromium como Brave o Edge)
 
@@ -122,7 +122,10 @@ Si vas a realizar cambios o agregar nuevas capacidades a la extensión, consulta
 │   ├── 01-arquitectura-y-flujo.md  # Contextos MV3, diagramas de secuencia y estados
 │   ├── 02-patrones-y-estandares.md # Reglas de diseño y convenciones del código
 │   └── 03-guia-extensibilidad.md   # Playbooks paso a paso para extender la app
+├── scripts/
+│   └── clean-manifest.js           # Postbuild hook para purgar recursos inexistentes del manifest
 ├── src/
+│   ├── sidepanel.tsx               # Entrypoint de montaje para el Side Panel de Plasmo
 │   ├── background/
 │   │   ├── index.ts                # Entrypoint Service Worker y router de OrchestratorCommand
 │   │   ├── tab-messenger.ts        # Resolución de pestaña activa y mensajería con reintentos
