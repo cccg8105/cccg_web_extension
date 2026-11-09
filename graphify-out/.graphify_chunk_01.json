@@ -1,0 +1,799 @@
+{
+  "nodes": [
+    {
+      "id": "readme_autoloop_rpa",
+      "label": "AutoLoop RPA - Extensión de Chrome",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Extensión en Chrome Manifest V3 construida con Plasmo, React y TypeScript para automatizar secuencias web sobre registros CSV/JSON o extracción de listas DOM."
+    },
+    {
+      "id": "readme_plasmo_framework",
+      "label": "Plasmo Extension Framework",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_workflow_iteration_loop",
+      "label": "Bucle de Iteración de Flujo RPA",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_readme_technical_documentation_index",
+      "label": "Índice de Documentación Técnica de AutoLoop RPA",
+      "file_type": "document",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_readme_documentation_map",
+      "label": "Mapa de Documentación, Grafo y Backlog",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Articula la relación complementaria entre docs/ (por qué y cómo), graphify-out/ (inventario vivo de qué existe) y backlog/ (hacia dónde va)."
+    },
+    {
+      "id": "docs_01_arquitectura_y_flujo_three_context_model",
+      "label": "Modelo de Tres Contextos Aislados MV3",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Separación estricta entre Side Panel UI, Background Service Worker y Content Scripts porque no comparten memoria en Chrome MV3 y deben comunicarse mediante runtime messages y storage local."
+    },
+    {
+      "id": "docs_01_arquitectura_y_flujo_side_panel_context",
+      "label": "Contexto Side Panel UI",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_01_arquitectura_y_flujo_background_service_worker_context",
+      "label": "Contexto Background Service Worker",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_01_arquitectura_y_flujo_content_scripts_context",
+      "label": "Contexto Content Scripts (Página Web)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_01_arquitectura_y_flujo_flow_a_visual_picking",
+      "label": "Flujo A: Selección Visual con PickerOverlay",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_01_arquitectura_y_flujo_flow_b_workflow_loop",
+      "label": "Flujo B: Ejecución Iterativa runWorkflowLoop",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_01_arquitectura_y_flujo_executionstate",
+      "label": "Máquina de Estados de ExecutionState",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_01_arquitectura_y_flujo_idempotent_loop_guard",
+      "label": "Idempotencia del Bucle isLoopRunning",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Evita disparar múltiples ejecuciones concurrentes en memoria dentro del Service Worker protegiendo la consistencia de los índices."
+    },
+    {
+      "id": "docs_01_arquitectura_y_flujo_bounded_log_retention",
+      "label": "Retención Acotada de Bitácora slice(-99)",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Limita los logs a 100 entradas para evitar saturar las cuotas de almacenamiento de chrome.storage.local."
+    },
+    {
+      "id": "docs_02_patrones_y_estandares_centralized_types_contract",
+      "label": "Contrato de Tipos Centralizado y Alias ~*",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Evita discrepancias de payloads y modelos serializados entre contextos MV3 aislando todas las definiciones en src/types/workflow.ts."
+    },
+    {
+      "id": "docs_02_patrones_y_estandares_workflowstorage_sync",
+      "label": "Sincronización Reactiva con workflowStorage",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_02_patrones_y_estandares_setnativevalue_pattern",
+      "label": "Patrón setNativeValue para Frameworks Reactivos",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Sobrescribe el setter nativo del prototipo y despacha eventos 'input' y 'change' para garantizar que React, Vue o Angular detecten cambios en los campos."
+    },
+    {
+      "id": "docs_02_patrones_y_estandares_waitforelement_resilience",
+      "label": "Espera Resiliente con waitForElement y MutationObserver",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Permite resolver elementos que se renderizan de forma asíncrona en SPAs antes de interactuar con ellos mediante scrollIntoView."
+    },
+    {
+      "id": "docs_02_patrones_y_estandares_shadow_dom_isolation",
+      "label": "Aislamiento en Content Scripts con Shadow DOM plasmo-csui",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Encapsula los estilos de Tailwind CSS y previene colisiones con el DOM y listeners de la página huésped usando event capturing."
+    },
+    {
+      "id": "docs_02_patrones_y_estandares_error_handling_policy",
+      "label": "Política de Manejo de Errores Stop o Skip",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Permite al usuario decidir si ante un fallo en un ítem el flujo debe detenerse por completo ('stop') o registrar la omisión y continuar con el siguiente ('skip')."
+    },
+    {
+      "id": "docs_03_guia_extensibilidad_playbook_add_action_type",
+      "label": "Playbook 1: Agregar nuevo ActionType",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\03-guia-extensibilidad.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_03_guia_extensibilidad_playbook_add_orchestrator_command",
+      "label": "Playbook 2: Agregar nuevo OrchestratorCommand",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\03-guia-extensibilidad.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_03_guia_extensibilidad_playbook_add_storage_key",
+      "label": "Playbook 3: Agregar nueva clave en STORAGE_KEYS",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\03-guia-extensibilidad.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_03_guia_extensibilidad_pre_completion_checklist",
+      "label": "Checklist de Verificación Previa a Finalización",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\03-guia-extensibilidad.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_04_selectores_autocurativos_rl_polymorphic_dom_problem",
+      "label": "Problema del DOM Polimórfico en Listas Web",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Variantes estructurales, promocionales y condicionales en tarjetas web hacen fallar selectores estáticos únicos."
+    },
+    {
+      "id": "docs_04_selectores_autocurativos_rl_cmab_agent",
+      "label": "Agente RL Contextual Multi-Armed Bandit",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_04_selectores_autocurativos_rl_targetfingerprint",
+      "label": "Huella Estructural y Semántica del Objetivo (F)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_04_selectores_autocurativos_rl_similarity_function",
+      "label": "Función de Similitud Convexa Sim(e, F)",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Combina concordancia de etiqueta HTML, índice Jaccard de clases estables, coincidencia de patrón de texto y proximidad geométrica normalizada."
+    },
+    {
+      "id": "docs_04_selectores_autocurativos_rl_reward_function",
+      "label": "Función de Recompensa de Acción Rt",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Asigna recompensa positiva proporcional a la similitud si supera el umbral, penalización de -0.5 en falso positivo y -1.0 en ausencia de nodo."
+    },
+    {
+      "id": "docs_04_selectores_autocurativos_rl_q_learning_rescorla_wagner",
+      "label": "Actualización Q-Learning Rescorla-Wagner TD(0)",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Actualiza el valor Q de cada selector con tasa de aprendizaje alfa constante para adaptarse a entornos DOM no estacionarios."
+    },
+    {
+      "id": "docs_04_selectores_autocurativos_rl_ucb1_selection_policy",
+      "label": "Política de Ordenamiento por Límite Superior UCB1",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Equilibra explotación de selectores con alto Q y exploración controlada de candidatos prometedores poco testeados."
+    },
+    {
+      "id": "docs_04_selectores_autocurativos_rl_self_healing_synthesis",
+      "label": "Exploración Activa y Síntesis de Selectores Autocurativos",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_04_selectores_autocurativos_rl_multi_run_memory",
+      "label": "Persistencia y Memoria a Largo Plazo Entre Corridas",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_04_selectores_autocurativos_rl_mv3_five_layer_integration",
+      "label": "Integración Arquitectónica en 5 Capas MV3",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "readme_autoloop_rpa",
+      "target": "readme_plasmo_framework",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "readme_autoloop_rpa",
+      "target": "readme_workflow_iteration_loop",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "readme_autoloop_rpa",
+      "target": "docs_readme_technical_documentation_index",
+      "relation": "cites",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_readme_technical_documentation_index",
+      "target": "docs_01_arquitectura_y_flujo_three_context_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_readme_technical_documentation_index",
+      "target": "docs_02_patrones_y_estandares_centralized_types_contract",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_readme_technical_documentation_index",
+      "target": "docs_03_guia_extensibilidad_pre_completion_checklist",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_readme_technical_documentation_index",
+      "target": "docs_04_selectores_autocurativos_rl_polymorphic_dom_problem",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_readme_documentation_map",
+      "target": "docs_readme_technical_documentation_index",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_01_arquitectura_y_flujo_three_context_model",
+      "target": "docs_01_arquitectura_y_flujo_side_panel_context",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_01_arquitectura_y_flujo_three_context_model",
+      "target": "docs_01_arquitectura_y_flujo_background_service_worker_context",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_01_arquitectura_y_flujo_three_context_model",
+      "target": "docs_01_arquitectura_y_flujo_content_scripts_context",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_01_arquitectura_y_flujo_side_panel_context",
+      "target": "docs_01_arquitectura_y_flujo_background_service_worker_context",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_01_arquitectura_y_flujo_background_service_worker_context",
+      "target": "docs_01_arquitectura_y_flujo_content_scripts_context",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_01_arquitectura_y_flujo_flow_a_visual_picking",
+      "target": "docs_01_arquitectura_y_flujo_content_scripts_context",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_01_arquitectura_y_flujo_flow_b_workflow_loop",
+      "target": "docs_01_arquitectura_y_flujo_background_service_worker_context",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_01_arquitectura_y_flujo_flow_b_workflow_loop",
+      "target": "docs_01_arquitectura_y_flujo_executionstate",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_01_arquitectura_y_flujo_idempotent_loop_guard",
+      "target": "docs_01_arquitectura_y_flujo_flow_b_workflow_loop",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_01_arquitectura_y_flujo_bounded_log_retention",
+      "target": "docs_01_arquitectura_y_flujo_executionstate",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_02_patrones_y_estandares_workflowstorage_sync",
+      "target": "docs_01_arquitectura_y_flujo_three_context_model",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_02_patrones_y_estandares_setnativevalue_pattern",
+      "target": "docs_01_arquitectura_y_flujo_content_scripts_context",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_02_patrones_y_estandares_waitforelement_resilience",
+      "target": "docs_01_arquitectura_y_flujo_content_scripts_context",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_02_patrones_y_estandares_shadow_dom_isolation",
+      "target": "docs_01_arquitectura_y_flujo_content_scripts_context",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_02_patrones_y_estandares_error_handling_policy",
+      "target": "docs_01_arquitectura_y_flujo_executionstate",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\02-patrones-y-estandares.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_03_guia_extensibilidad_playbook_add_action_type",
+      "target": "docs_02_patrones_y_estandares_centralized_types_contract",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\03-guia-extensibilidad.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_03_guia_extensibilidad_playbook_add_orchestrator_command",
+      "target": "docs_02_patrones_y_estandares_centralized_types_contract",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\03-guia-extensibilidad.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_03_guia_extensibilidad_playbook_add_storage_key",
+      "target": "docs_02_patrones_y_estandares_workflowstorage_sync",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\03-guia-extensibilidad.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_03_guia_extensibilidad_pre_completion_checklist",
+      "target": "docs_readme_technical_documentation_index",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\03-guia-extensibilidad.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_04_selectores_autocurativos_rl_polymorphic_dom_problem",
+      "target": "docs_04_selectores_autocurativos_rl_cmab_agent",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_04_selectores_autocurativos_rl_cmab_agent",
+      "target": "docs_04_selectores_autocurativos_rl_ucb1_selection_policy",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_04_selectores_autocurativos_rl_cmab_agent",
+      "target": "docs_04_selectores_autocurativos_rl_q_learning_rescorla_wagner",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_04_selectores_autocurativos_rl_similarity_function",
+      "target": "docs_04_selectores_autocurativos_rl_targetfingerprint",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_04_selectores_autocurativos_rl_reward_function",
+      "target": "docs_04_selectores_autocurativos_rl_q_learning_rescorla_wagner",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_04_selectores_autocurativos_rl_self_healing_synthesis",
+      "target": "docs_04_selectores_autocurativos_rl_targetfingerprint",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_04_selectores_autocurativos_rl_multi_run_memory",
+      "target": "docs_02_patrones_y_estandares_workflowstorage_sync",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_04_selectores_autocurativos_rl_mv3_five_layer_integration",
+      "target": "docs_01_arquitectura_y_flujo_three_context_model",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_04_selectores_autocurativos_rl_self_healing_synthesis",
+      "target": "docs_02_patrones_y_estandares_waitforelement_resilience",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "mv3_three_context_coordination",
+      "label": "Coordinación de Tres Contextos Aislados en Chrome MV3",
+      "nodes": [
+        "docs_01_arquitectura_y_flujo_side_panel_context",
+        "docs_01_arquitectura_y_flujo_background_service_worker_context",
+        "docs_01_arquitectura_y_flujo_content_scripts_context"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\01-arquitectura-y-flujo.md"
+    },
+    {
+      "id": "self_healing_rl_engine_pipeline",
+      "label": "Pipeline del Motor de Selectores Autocurativos RL",
+      "nodes": [
+        "docs_04_selectores_autocurativos_rl_targetfingerprint",
+        "docs_04_selectores_autocurativos_rl_ucb1_selection_policy",
+        "docs_04_selectores_autocurativos_rl_q_learning_rescorla_wagner",
+        "docs_04_selectores_autocurativos_rl_self_healing_synthesis"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\04-selectores-autocurativos-rl.md"
+    },
+    {
+      "id": "extensibility_playbooks_suite",
+      "label": "Suite de Playbooks de Extensibilidad",
+      "nodes": [
+        "docs_03_guia_extensibilidad_playbook_add_action_type",
+        "docs_03_guia_extensibilidad_playbook_add_orchestrator_command",
+        "docs_03_guia_extensibilidad_playbook_add_storage_key"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\cesar\\repos\\cccg_web_extension\\docs\\03-guia-extensibilidad.md"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
