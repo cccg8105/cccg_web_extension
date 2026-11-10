@@ -230,7 +230,7 @@ export function WorkflowLibraryCard({
     reader.onload = () => {
       try {
         const validation = parseAndValidateWorkflowJson(String(reader.result))
-        if (!validation.ok) {
+        if (validation.ok === false) {
           setWorkflowFeedback({
             type: "error",
             text: validation.error
@@ -265,10 +265,10 @@ export function WorkflowLibraryCard({
   }
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-2.5 space-y-2">
+    <div className="bg-ember border border-rim rounded-lg p-2.5 space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-semibold text-slate-200 flex items-center gap-1.5">
-          <Bookmark className="w-3.5 h-3.5 text-indigo-400" />
+        <span className="text-[11px] font-semibold text-parchment flex items-center gap-1.5">
+          <Bookmark className="w-3.5 h-3.5 text-coral-shimmer" />
           Plantillas y Flujos ({savedWorkflows?.length ?? 0})
         </span>
         <div className="flex items-center gap-1">
@@ -284,8 +284,8 @@ export function WorkflowLibraryCard({
             disabled={isRunning}
             onClick={() => workflowFileInputRef.current?.click()}
             title="Importar flujo desde archivo .json"
-            className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 text-[10px] font-medium flex items-center gap-1 border border-slate-700 transition">
-            <Upload className="w-3 h-3 text-indigo-400" />
+            className="px-2 py-1 rounded bg-void-black hover:bg-obsidian disabled:opacity-40 text-limestone hover:text-parchment text-[10px] font-medium flex items-center gap-1 border border-rim transition">
+            <Upload className="w-3 h-3 text-copper" />
             Importar
           </button>
           <button
@@ -293,8 +293,8 @@ export function WorkflowLibraryCard({
             disabled={isRunning}
             onClick={handleExportSteps}
             title="Exportar pasos actuales a archivo .json"
-            className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 text-[10px] font-medium flex items-center gap-1 border border-slate-700 transition">
-            <Download className="w-3 h-3 text-emerald-400" />
+            className="px-2 py-1 rounded bg-void-black hover:bg-obsidian disabled:opacity-40 text-limestone hover:text-parchment text-[10px] font-medium flex items-center gap-1 border border-rim transition">
+            <Download className="w-3 h-3 text-forest-deep" />
             Exportar
           </button>
         </div>
@@ -308,14 +308,14 @@ export function WorkflowLibraryCard({
           value={workflowName}
           onChange={(e) => setWorkflowName(e.target.value)}
           placeholder="Nombre del flujo (ej. Catálogo Productos)"
-          className="flex-1 bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-60"
+          className="flex-1 bg-void-black border border-rim rounded px-2.5 py-1.5 text-[11px] text-parchment placeholder:text-ash/60 focus:outline-none focus:border-coral-shimmer disabled:opacity-60"
         />
         <button
           type="button"
           disabled={isRunning}
           onClick={handleSaveWorkflow}
-          className="px-2.5 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-medium flex items-center gap-1 shrink-0 transition">
-          <Save className="w-3.5 h-3.5" />
+          className="px-2.5 py-1.5 rounded bg-forest-deep hover:bg-forest-deep/90 disabled:opacity-40 text-parchment font-medium flex items-center gap-1 shrink-0 transition shadow-sm">
+          <Save className="w-3.5 h-3.5 text-coral-shimmer" />
           Guardar
         </button>
       </div>
@@ -333,7 +333,7 @@ export function WorkflowLibraryCard({
                 handleLoadWorkflow(nextId)
               }
             }}
-            className="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-60">
+            className="flex-1 bg-void-black border border-rim rounded px-2 py-1.5 text-[11px] text-parchment focus:outline-none focus:border-coral-shimmer disabled:opacity-60">
             <option value="">-- Seleccionar flujo guardado --</option>
             {savedWorkflows.map((wf) => (
               <option key={wf.id} value={wf.id}>
@@ -347,8 +347,8 @@ export function WorkflowLibraryCard({
             disabled={!selectedWorkflowId || isRunning}
             onClick={() => handleLoadWorkflow()}
             title="Cargar flujo seleccionado"
-            className="px-2 py-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 font-medium flex items-center gap-1 shrink-0 border border-slate-700">
-            <FolderOpen className="w-3.5 h-3.5 text-indigo-400" />
+            className="px-2 py-1.5 rounded bg-void-black hover:bg-obsidian disabled:opacity-40 text-limestone hover:text-parchment font-medium flex items-center gap-1 shrink-0 border border-rim transition">
+            <FolderOpen className="w-3.5 h-3.5 text-copper" />
             Cargar
           </button>
           <button
@@ -356,7 +356,7 @@ export function WorkflowLibraryCard({
             disabled={!selectedWorkflowId || isRunning}
             onClick={handleDeleteWorkflow}
             title="Eliminar flujo de la biblioteca"
-            className="p-1.5 rounded bg-slate-800 hover:bg-rose-500/20 disabled:opacity-40 text-rose-400 shrink-0 border border-slate-700">
+            className="p-1.5 rounded bg-void-black hover:bg-rose-950/20 disabled:opacity-40 text-rose-400 shrink-0 border border-rim transition">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -367,7 +367,7 @@ export function WorkflowLibraryCard({
           className={`text-[11px] ${
             workflowFeedback.type === "error"
               ? "text-rose-400"
-              : "text-emerald-400"
+              : "text-forest-deep"
           }`}>
           {workflowFeedback.text}
         </p>

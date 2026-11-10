@@ -157,3 +157,36 @@ Esto garantiza que el clic para capturar un selector no dispare la navegación d
    - Si después de los reintentos o de la ejecución el resultado es `ok: false`, el runner (`records-runner.ts` o `dom-list-runner.ts`) actualiza la fila con `applyStepErrorToResults` y aplica la política configurada en `ExecutionOptions.onError`:
      - `"stop"`: transiciona `ExecutionState.status` a `"error"`, guarda el detalle en `errorMessage` y detiene el bucle.
      - `"skip"`: incrementa `skippedOrErrorCount`, registra la advertencia en `logs` mediante `appendLogEntry` y salta a la siguiente fila/ítem.
+
+
+---
+
+## 6. Sistema de Diseño Dark y Tokens Semánticos (`designmd` — Retool Theme)
+
+La extensión utiliza un sistema de diseño oscuro orgánico de alta densidad y contraste cálido, configurado en [`tailwind.config.js`](../tailwind.config.js):
+
+### 6.1 Superficies y Colores
+- **Lienzo base (`obsidian-canvas`):** `#151515` como fondo general y base dominante de las pantallas.
+- **Capa profunda (`void-black`):** `#0e0e0e` para campos de entrada, consola de logs y encabezados contraídos.
+- **Superficie elevada (`ember-surface`):** `#242424` para tarjetas de pasos (`StepCard`), configuraciones y biblioteca.
+- **Divisores y bordes (`charcoal-rim`):** `#3f403d` para bordes sutiles entre secciones y campos interactivos.
+- **Acento secundario/íconos (`copper-wire`):** `#8b867f` para detalles de interfaz e íconos auxiliares.
+- **Acento cromático vibrante (`spectrum-shimmer`):** `#e87650` (coral) para selección activa, badges de extracción, foco y resaltados en DOM.
+- **Acento forestal (`forest-deep` / `midnight-moss`):** `#185849` y `#0e352c` para pestañas activas, botones primarios y badges de estado.
+- **Escala de textos:**
+  - `parchment`: `#e9ebdf` para títulos principales, texto primario y CTA invertido.
+  - `fog-text`: `#cbccc4` para subtítulos y texto destacado.
+  - `limestone`: `#b6b8af` para etiquetas terciarias y botones secundarios.
+  - `ash-text`: `#94958e` para descripciones de ayuda y metadatos.
+
+### 6.2 Tipografías Locales
+Para garantizar funcionamiento sin conexión y cumplir con la CSP de Chrome MV3, las fuentes se empaquetan localmente con `@fontsource`:
+- **`font-sans`:** `'DM Sans', system-ui, -apple-system, sans-serif` para la interfaz de usuario.
+- **`font-mono`:** `'Geist', ui-monospace, SFMono-Regular, Menlo, monospace` para selectores CSS, variables y logs.
+
+### 6.3 Semántica de Estados Operativos
+- `running` / `completed`: Forest Moss / Deep (`bg-forest-moss text-fog border-forest-deep`).
+- `picking`: Coral Shimmer animado (`bg-forest-moss text-coral-shimmer border-coral-shimmer/60 animate-pulse`).
+- `paused`: Ámbar (`bg-amber-950/40 text-amber-300 border-amber-600/40`).
+- `error`: Rosa/Rojo (`bg-rose-950/40 text-rose-300 border-rose-600/40`).
+- `idle`: Neutro (`bg-ember text-ash border-rim`).

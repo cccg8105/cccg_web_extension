@@ -1,0 +1,194 @@
+{
+  "src/background/index.ts": {
+    "mtime": 1792792354.4936447,
+    "seen": 1794181189.2286572,
+    "ast_hash": "854241a25d5ab3cbae8f4147e92e9415",
+    "semantic_hash": "854241a25d5ab3cbae8f4147e92e9415"
+  },
+  "src/background/runners/dom-list-runner.ts": {
+    "mtime": 1792794033.1475582,
+    "seen": 1794181189.2286696,
+    "ast_hash": "dea43f261d3ededf6a7535c19408b128",
+    "semantic_hash": "dea43f261d3ededf6a7535c19408b128"
+  },
+  "src/background/runners/orchestrator.ts": {
+    "mtime": 1792794002.7016892,
+    "seen": 1794181189.228678,
+    "ast_hash": "d05ceda4d26f1afdddcac348c3b35f1d",
+    "semantic_hash": "d05ceda4d26f1afdddcac348c3b35f1d"
+  },
+  "src/background/runners/records-runner.ts": {
+    "mtime": 1792794032.5352101,
+    "seen": 1794181189.2286835,
+    "ast_hash": "f7a4cc3671288d0e8cc28511f0491efc",
+    "semantic_hash": "f7a4cc3671288d0e8cc28511f0491efc"
+  },
+  "src/background/state-manager.ts": {
+    "mtime": 1792791095.4474912,
+    "seen": 1794181189.2286885,
+    "ast_hash": "d23c1f2afebfd5df3d6151926b04a67c",
+    "semantic_hash": "d23c1f2afebfd5df3d6151926b04a67c"
+  },
+  "src/background/tab-messenger.ts": {
+    "mtime": 1792791087.9929154,
+    "seen": 1794181189.2286925,
+    "ast_hash": "3f9aa78bcb2e988a4ef4bd32ae6e4917",
+    "semantic_hash": "3f9aa78bcb2e988a4ef4bd32ae6e4917"
+  },
+  "src/contents/action-executor.ts": {
+    "mtime": 1793128527.1142094,
+    "seen": 1794181189.2286973,
+    "ast_hash": "7dc8be61b52eac2b19fe5ca8a21f40f8",
+    "semantic_hash": "7dc8be61b52eac2b19fe5ca8a21f40f8"
+  },
+  "src/contents/picker-overlay.tsx": {
+    "mtime": 1794192960.154937,
+    "seen": 1794193152.5366852,
+    "ast_hash": "2b3912d0efb900ea32c860579952f9e9",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/components/DomListConfigCard.tsx": {
+    "mtime": 1794192815.8329556,
+    "seen": 1794193152.5366888,
+    "ast_hash": "2ad5f3aea8ecd9d35ee69403a8c0a37c",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/components/ExecutionOptionsCard.tsx": {
+    "mtime": 1794192832.0213816,
+    "seen": 1794193152.5366907,
+    "ast_hash": "444a69e3457443df0ad26a4a818b491d",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/components/ModeSelectorBar.tsx": {
+    "mtime": 1794192746.3921382,
+    "seen": 1794193152.536692,
+    "ast_hash": "028eaf595bad863cf9005827d0d2c75c",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/components/SidePanelHeader.tsx": {
+    "mtime": 1794192734.6307971,
+    "seen": 1794193152.5366936,
+    "ast_hash": "7130e1ead411ad4d1042e8ed1321392d",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/components/StepCard.tsx": {
+    "mtime": 1794192793.0375702,
+    "seen": 1794193152.536695,
+    "ast_hash": "f5446516059285b2932e09e2c0bbb6b8",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/components/WorkflowLibraryCard.tsx": {
+    "mtime": 1794192858.996914,
+    "seen": 1794193152.5366964,
+    "ast_hash": "497b4d2cd2f93d82d8bd8ffd90977111",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/components/tabs/DataTab.tsx": {
+    "mtime": 1794192907.3601818,
+    "seen": 1794193152.5366976,
+    "ast_hash": "4ddef9604886e82f8bc8b981febd8fff",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/components/tabs/RunTab.tsx": {
+    "mtime": 1794192943.1052034,
+    "seen": 1794193152.5366988,
+    "ast_hash": "7d4ca4a1e6d7ddfb154ce014f30e4375",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/components/tabs/StepsTab.tsx": {
+    "mtime": 1794192884.0824423,
+    "seen": 1794193152.5367002,
+    "ast_hash": "1a28d603aed4fc8fa40df89bec22348a",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/index.tsx": {
+    "mtime": 1794192721.6958642,
+    "seen": 1794193152.536702,
+    "ast_hash": "c1b4f8c1838e07eae3fc92904d50cd78",
+    "semantic_hash": ""
+  },
+  "src/sidepanel/utils/records-parser.ts": {
+    "mtime": 1792791131.274265,
+    "seen": 1794181189.228755,
+    "ast_hash": "e787481342262955446b207aa7a8da11",
+    "semantic_hash": "e787481342262955446b207aa7a8da11"
+  },
+  "src/sidepanel/utils/step-helpers.ts": {
+    "mtime": 1792791123.7108212,
+    "seen": 1794181189.22876,
+    "ast_hash": "cc9be3e9e529989c924dccb15e5ce715",
+    "semantic_hash": "cc9be3e9e529989c924dccb15e5ce715"
+  },
+  "src/sidepanel/utils/workflow-io.ts": {
+    "mtime": 1792794095.1164317,
+    "seen": 1794181189.228765,
+    "ast_hash": "40b2f57bc7242e6460f39c04810a6867",
+    "semantic_hash": "40b2f57bc7242e6460f39c04810a6867"
+  },
+  "src/storage/workflow-storage.ts": {
+    "mtime": 1792793970.9659617,
+    "seen": 1794181189.2287698,
+    "ast_hash": "42596798e8dcd3a072bf746b8a7f2b21",
+    "semantic_hash": "42596798e8dcd3a072bf746b8a7f2b21"
+  },
+  "src/types/workflow.ts": {
+    "mtime": 1792793970.632816,
+    "seen": 1794181189.2287765,
+    "ast_hash": "bdfbb7b00f234ad610440901abe4fb4e",
+    "semantic_hash": "bdfbb7b00f234ad610440901abe4fb4e"
+  },
+  "README.md": {
+    "mtime": 1794191096.0449922,
+    "seen": 1794193152.536713,
+    "ast_hash": "c07fd49e49ad978591fd84e2abbf57ad",
+    "semantic_hash": ""
+  },
+  "docs/01-arquitectura-y-flujo.md": {
+    "mtime": 1793120568.295134,
+    "seen": 1794181189.2287855,
+    "ast_hash": "46ed3454433b56a9b07ccabbc9dd5953",
+    "semantic_hash": "46ed3454433b56a9b07ccabbc9dd5953"
+  },
+  "docs/02-patrones-y-estandares.md": {
+    "mtime": 1794193055.163772,
+    "seen": 1794193152.5367157,
+    "ast_hash": "dae6cc63c7af2426dac95384d60da909",
+    "semantic_hash": ""
+  },
+  "docs/03-guia-extensibilidad.md": {
+    "mtime": 1793120568.306724,
+    "seen": 1794181189.228839,
+    "ast_hash": "5706e33ca69cf0276d1d0b0d0fc505f2",
+    "semantic_hash": "5706e33ca69cf0276d1d0b0d0fc505f2"
+  },
+  "docs/04-selectores-autocurativos-rl.md": {
+    "mtime": 1793131565.8123522,
+    "seen": 1794181189.2288563,
+    "ast_hash": "6d23d00fe8e22e81871049fc26078804",
+    "semantic_hash": "6d23d00fe8e22e81871049fc26078804"
+  },
+  "docs/README.md": {
+    "mtime": 1793131569.4505258,
+    "seen": 1794181189.228863,
+    "ast_hash": "0fd931622c7bca92f2579f1cc5479b86",
+    "semantic_hash": "0fd931622c7bca92f2579f1cc5479b86"
+  },
+  "scripts/clean-manifest.js": {
+    "mtime": 1794192079.3167458,
+    "seen": 1794193152.5366607,
+    "ast_hash": "e1601c9971b830ab7d8a851d495f2776",
+    "semantic_hash": ""
+  },
+  "src/sidepanel.tsx": {
+    "mtime": 1794189238.2028732,
+    "seen": 1794193152.5366871,
+    "ast_hash": "c02aa93980328120ffe910f69c0287ef",
+    "semantic_hash": ""
+  },
+  "GEMINI.md": {
+    "mtime": 1794189698.0683005,
+    "seen": 1794193152.5367115,
+    "ast_hash": "3fefe28bdaa57522c49e6d03baac2e5e",
+    "semantic_hash": ""
+  }
+}

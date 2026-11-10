@@ -12,24 +12,27 @@ export function SidePanelHeader({ status, mode }: SidePanelHeaderProps) {
       : "Automatización iterativa por lista de registros (CSV/JSON)"
 
   return (
-    <header className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+    <header className="px-4 py-3 bg-void-black border-b border-rim flex items-center justify-between">
       <div>
-        <h1 className="text-sm font-bold text-white flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+        <h1 className="text-sm font-medium tracking-tight text-parchment flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-coral-shimmer shadow-[0_0_8px_rgba(232,118,80,0.6)]" />
           AutoLoop RPA
         </h1>
-        <p className="text-[11px] text-slate-400">{subtitle}</p>
+        <p className="text-[11px] text-ash">{subtitle}</p>
       </div>
       <span
-        className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-          status === "running"
-            ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/40"
+        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition ${status === "running"
+            ? "bg-forest-moss text-fog border-forest-deep"
             : status === "picking"
-              ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40 animate-pulse"
-              : status === "error"
-                ? "bg-rose-500/15 text-rose-300 border-rose-500/40"
-                : "bg-slate-800 text-slate-300 border-slate-700"
-        }`}>
+              ? "bg-forest-moss text-coral-shimmer border-coral-shimmer/60 animate-pulse"
+              : status === "paused"
+                ? "bg-amber-950/40 text-amber-300 border-amber-600/40"
+                : status === "completed"
+                  ? "bg-forest-moss text-fog border-forest-deep"
+                  : status === "error"
+                    ? "bg-rose-950/40 text-rose-300 border-rose-600/40"
+                    : "bg-ember text-ash border-rim"
+          }`}>
         {status === "running" && "Ejecutando"}
         {status === "picking" && "Seleccionando DOM"}
         {status === "paused" && "En pausa"}

@@ -7,34 +7,27 @@ module.exports = {
     extend: {
       colors: {
         canvas: {
-          DEFAULT: "#0a0a0a",
-          void: "#0a0a0a",
-          graphite: "#161616",
-          frosted: "rgba(212, 212, 212, 0.10)"
+          DEFAULT: "#151515",
+          obsidian: "#151515",
+          void: "#0e0e0e",
+          ember: "#242424"
         },
-        void: "#0a0a0a",
-        graphite: "#161616",
-        frosted: "rgba(212, 212, 212, 0.10)",
-        ink: "#000000",
-        snow: "#ffffff",
-        bone: "#ededed",
-        ash: "#c2c2c2",
-        slate: {
-          muted: "#686868",
-          smoke: "#b2b2b2"
+        obsidian: "#151515",
+        "void-black": "#0e0e0e",
+        ember: "#242424",
+        rim: "#3f403d",
+        copper: "#8b867f",
+        ash: "#94958e",
+        fog: "#cbccc4",
+        limestone: "#b6b8af",
+        parchment: "#e9ebdf",
+        forest: {
+          deep: "#185849",
+          moss: "#0e352c"
         },
-        smoke: "#b2b2b2",
-        hairline: {
-          DEFAULT: "rgba(229, 229, 229, 0.12)",
-          strong: "rgba(229, 229, 229, 0.20)",
-          subtle: "rgba(229, 229, 229, 0.08)"
-        },
-        violet: {
-          dusk: "#6b62f2",
-          glow: "rgba(107, 98, 242, 0.565)",
-          surface: "rgba(107, 98, 242, 0.15)"
-        },
-        "dusk-violet": "#6b62f2"
+        coral: {
+          shimmer: "#e87650"
+        }
       },
       fontFamily: {
         sans: ["'DM Sans'", "system-ui", "-apple-system", "BlinkMacSystemFont", "sans-serif"],

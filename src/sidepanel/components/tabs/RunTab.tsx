@@ -133,7 +133,7 @@ export function RunTab() {
 
   return (
     <div className="space-y-3">
-      {/* Execution Options (F-08 & F-09) */}
+      {/* Execution Options */}
       <ExecutionOptionsCard
         options={currentOptions}
         onChange={setExecutionOptions}
@@ -142,17 +142,17 @@ export function RunTab() {
       />
 
       {/* Progress Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-3">
+      <div className="bg-ember border border-rim rounded-lg p-3 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-slate-400 text-[11px]">
+            <div className="text-ash text-[11px]">
               {isDomListMode
                 ? paginationEnabled
                   ? `Extracción de lista · Página ${currentPage} (máx. ${maxPages})`
                   : "Extracción de lista en página actual"
                 : "Progreso de iteración por registros"}
             </div>
-            <div className="text-sm font-bold text-white">
+            <div className="text-sm font-medium text-parchment">
               {isDomListMode
                 ? executionState?.status === "completed"
                   ? `${validResults.length} elemento(s) procesados en total`
@@ -164,23 +164,21 @@ export function RunTab() {
                   : `Registro #${currentRecordNumber} de ${effectiveEndRow}`}
             </div>
           </div>
-          <span className="text-sm font-mono font-bold text-indigo-400">
+          <span className="text-sm font-mono font-bold text-coral-shimmer">
             {progressPercent}%
           </span>
         </div>
 
-        <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+        <div className="w-full h-2 bg-void-black rounded-full overflow-hidden border border-rim">
           <div
             style={{ width: `${progressPercent}%` }}
-            className={`h-full transition-all duration-300 ${
-              isDomListMode ? "bg-pink-500" : "bg-indigo-500"
-            }`}
+            className="h-full bg-coral-shimmer shadow-[0_0_8px_rgba(232,118,80,0.5)] transition-all duration-300"
           />
         </div>
 
         {/* Skipped / Error rows counter badge */}
         {skippedCount > 0 && (
-          <div className="flex items-center gap-2 p-2 rounded bg-amber-950/40 border border-amber-500/30 text-amber-200 text-[11px]">
+          <div className="flex items-center gap-2 p-2 rounded bg-amber-950/30 border border-amber-600/30 text-amber-200 text-[11px]">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             <span>
               {skippedCount} fila(s)/ítem(s) con error registrados en el
@@ -191,7 +189,7 @@ export function RunTab() {
 
         {/* Error Banner */}
         {executionState?.status === "error" && executionState?.errorMessage && (
-          <div className="flex items-start gap-2 p-2.5 rounded bg-rose-950/50 border border-rose-500/40 text-rose-200 text-[11px]">
+          <div className="flex items-start gap-2 p-2.5 rounded bg-rose-950/40 border border-rose-600/40 text-rose-300 text-[11px]">
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
             <div>{executionState.errorMessage}</div>
           </div>
@@ -199,8 +197,8 @@ export function RunTab() {
 
         {/* Completed Banner */}
         {executionState?.status === "completed" && (
-          <div className="flex items-center gap-2 p-2.5 rounded bg-emerald-950/50 border border-emerald-500/40 text-emerald-200 text-[11px]">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-2 p-2.5 rounded bg-forest-moss border border-forest-deep text-fog text-[11px]">
+            <CheckCircle2 className="w-4 h-4 text-coral-shimmer shrink-0" />
             <span>
               {isDomListMode
                 ? `Extracción finalizada (${validResults.length} fila(s) en reporte${skippedCount > 0 ? `, ${skippedCount} con error` : ""}).`
@@ -218,12 +216,8 @@ export function RunTab() {
                 onClick={() =>
                   sendOrchestratorCommand({ type: "START_WORKFLOW" })
                 }
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-white font-semibold shadow transition ${
-                  isDomListMode
-                    ? "bg-pink-600 hover:bg-pink-500"
-                    : "bg-indigo-600 hover:bg-indigo-500"
-                }`}>
-                <Play className="w-4 h-4" />
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-parchment hover:bg-fog text-void-black font-semibold shadow-sm transition">
+                <Play className="w-4 h-4 fill-void-black" />
                 {isDomListMode
                   ? "Iniciar Extracción de Lista"
                   : `Iniciar Iteración (${totalInRange})`}
@@ -236,7 +230,7 @@ export function RunTab() {
               onClick={() =>
                 sendOrchestratorCommand({ type: "PAUSE_WORKFLOW" })
               }
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold transition">
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-amber-950/40 hover:bg-amber-950/60 text-amber-300 border border-amber-600/40 font-medium transition">
               <Pause className="w-4 h-4" />
               Pausar
             </button>
@@ -248,7 +242,7 @@ export function RunTab() {
               onClick={() =>
                 sendOrchestratorCommand({ type: "RESUME_WORKFLOW" })
               }
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition">
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-forest-deep/60 hover:bg-forest-deep text-parchment border border-forest-deep font-medium transition">
               <Play className="w-4 h-4" />
               Reanudar
             </button>
@@ -262,7 +256,7 @@ export function RunTab() {
               onClick={() =>
                 sendOrchestratorCommand({ type: "STOP_WORKFLOW" })
               }
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 font-medium transition">
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-rose-950/40 hover:bg-rose-950/60 text-rose-300 border border-rose-600/40 font-medium transition">
               <Square className="w-3.5 h-3.5" />
               Detener
             </button>
@@ -271,18 +265,18 @@ export function RunTab() {
 
         {/* CSV Report Download */}
         {validResults.length > 0 && (
-          <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
-            <div className="text-[11px] text-slate-400">
+          <div className="pt-2 border-t border-rim flex items-center justify-between gap-2">
+            <div className="text-[11px] text-ash">
               Resultados capturados:{" "}
-              <span className="font-semibold text-slate-200">
+              <span className="font-semibold text-parchment">
                 {validResults.length} fila(s)
               </span>
             </div>
             <button
               type="button"
               onClick={() => downloadExecutionReportCsv(validResults)}
-              className="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 font-medium flex items-center gap-1.5 transition">
-              <Download className="w-3.5 h-3.5" />
+              className="px-3 py-1.5 rounded-lg bg-forest-moss hover:bg-forest-deep text-parchment border border-forest-deep font-medium flex items-center gap-1.5 transition">
+              <Download className="w-3.5 h-3.5 text-coral-shimmer" />
               Descargar Reporte CSV
             </button>
           </div>
@@ -290,9 +284,9 @@ export function RunTab() {
       </div>
 
       {/* Execution Logs */}
-      <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-2">
+      <div className="bg-ember border border-rim rounded-lg p-3 space-y-2">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-slate-200">
+          <span className="font-semibold text-parchment">
             Bitácora de ejecución
           </span>
           <button
@@ -303,13 +297,13 @@ export function RunTab() {
                 logs: []
               })
             }
-            className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-200">
+            className="flex items-center gap-1 text-[11px] text-ash hover:text-parchment transition">
             <RotateCcw className="w-3 h-3" />
             Limpiar
           </button>
         </div>
 
-        <div className="bg-slate-950 border border-slate-800 rounded p-2 h-64 overflow-y-auto font-mono text-[11px] space-y-1">
+        <div className="bg-void-black border border-rim rounded p-2 h-64 overflow-y-auto font-mono text-[11px] space-y-1">
           {executionState?.logs && executionState.logs.length > 0 ? (
             executionState.logs
               .slice()
@@ -317,12 +311,12 @@ export function RunTab() {
               .map((line, i) => (
                 <div
                   key={i}
-                  className="text-slate-300 border-b border-slate-900 pb-1">
+                  className="text-ash border-b border-rim/40 pb-1">
                   {line}
                 </div>
               ))
           ) : (
-            <div className="text-slate-600 text-center py-8">
+            <div className="text-ash/50 text-center py-8">
               Aún no hay eventos registrados.
             </div>
           )}

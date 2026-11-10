@@ -16,27 +16,27 @@ import type {
 const BADGE_CONFIG: Record<ActionType, { text: string; className: string }> = {
   click: {
     text: "CLIC",
-    className: "bg-indigo-500/15 text-indigo-300 border-indigo-500/30"
+    className: "bg-forest-moss text-parchment border-forest-deep"
   },
   input: {
     text: "TEXTO",
-    className: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+    className: "bg-forest-deep/30 text-fog border-forest-deep/60"
   },
   select: {
     text: "SELECT",
-    className: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30"
+    className: "bg-ember text-limestone border-rim"
   },
   keypress: {
     text: "TECLA",
-    className: "bg-purple-500/15 text-purple-300 border-purple-500/30"
+    className: "bg-ember text-copper border-rim"
   },
   extract: {
     text: "EXTRAER",
-    className: "bg-pink-500/15 text-pink-300 border-pink-500/30"
+    className: "bg-coral-shimmer/20 text-coral-shimmer border-coral-shimmer/40"
   },
   wait: {
     text: "ESPERA",
-    className: "bg-amber-500/15 text-amber-300 border-amber-500/30"
+    className: "bg-amber-950/30 text-amber-300 border-amber-600/30"
   }
 }
 
@@ -80,14 +80,13 @@ export function StepCard({
 
   return (
     <div
-      className={`rounded-lg border p-3 space-y-2.5 transition ${
-        isPickingThis
-          ? "bg-indigo-950/30 border-indigo-500"
-          : "bg-slate-900 border-slate-800"
-      }`}>
+      className={`rounded-lg border p-3 space-y-2.5 transition ${isPickingThis
+          ? "bg-forest-moss/60 border-coral-shimmer shadow-[0_0_12px_rgba(232,118,80,0.25)]"
+          : "bg-ember border-rim hover:border-copper/50"
+        }`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-[11px] shrink-0">
+          <span className="w-5 h-5 rounded-full bg-void-black border border-rim text-ash font-bold flex items-center justify-center text-[11px] shrink-0">
             {index + 1}
           </span>
           <span
@@ -99,7 +98,7 @@ export function StepCard({
             disabled={isRunning}
             value={step.label}
             onChange={(e) => onUpdate(step.id, { label: e.target.value })}
-            className="bg-transparent border-b border-transparent focus:border-indigo-500 focus:outline-none font-medium text-slate-100 truncate w-full disabled:opacity-60"
+            className="bg-transparent border-b border-transparent focus:border-coral-shimmer focus:outline-none font-medium text-parchment truncate w-full disabled:opacity-60"
           />
         </div>
 
@@ -109,7 +108,7 @@ export function StepCard({
             onClick={() => onMove(index, -1)}
             disabled={index === 0 || isRunning}
             title="Subir paso"
-            className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30">
+            className="p-1 rounded bg-void-black hover:bg-obsidian border border-rim text-ash hover:text-parchment disabled:opacity-30">
             <ChevronUp className="w-3.5 h-3.5" />
           </button>
           <button
@@ -117,7 +116,7 @@ export function StepCard({
             onClick={() => onMove(index, 1)}
             disabled={index === totalSteps - 1 || isRunning}
             title="Bajar paso"
-            className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30">
+            className="p-1 rounded bg-void-black hover:bg-obsidian border border-rim text-ash hover:text-parchment disabled:opacity-30">
             <ChevronDown className="w-3.5 h-3.5" />
           </button>
           <button
@@ -125,7 +124,7 @@ export function StepCard({
             onClick={() => onDuplicate(index)}
             disabled={isRunning}
             title="Duplicar paso"
-            className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30">
+            className="p-1 rounded bg-void-black hover:bg-obsidian border border-rim text-ash hover:text-parchment disabled:opacity-30">
             <Copy className="w-3.5 h-3.5" />
           </button>
           <button
@@ -133,7 +132,7 @@ export function StepCard({
             onClick={() => onRemove(step.id)}
             disabled={isRunning}
             title="Eliminar paso"
-            className="p-1 rounded text-rose-400 hover:bg-rose-500/15 disabled:opacity-30">
+            className="p-1 rounded text-rose-400 hover:bg-rose-950/20 border border-transparent hover:border-rose-600/30 disabled:opacity-30">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -142,7 +141,7 @@ export function StepCard({
       {/* Selector Config for DOM steps */}
       {step.type !== "wait" && (
         <div className="space-y-1.5">
-          <label className="block text-[11px] text-slate-400">
+          <label className="block text-[11px] text-ash">
             {mode === "dom_list_extract"
               ? "Selector CSS dentro del ítem (o :scope para el contenedor):"
               : "Selector CSS del componente:"}
@@ -160,17 +159,16 @@ export function StepCard({
                     ? "Ej: select[name='rol'] o #pais"
                     : "Ej: #submit-btn o input[name='email']"
               }
-              className="flex-1 bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 font-mono text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-60"
+              className="flex-1 bg-void-black border border-rim rounded px-2.5 py-1.5 font-mono text-[11px] text-parchment placeholder:text-ash/60 focus:outline-none focus:border-coral-shimmer focus:ring-1 focus:ring-coral-shimmer/30 disabled:opacity-60"
             />
             <button
               type="button"
               disabled={isRunning}
               onClick={() => onTogglePick(step.id)}
-              className={`px-2.5 py-1.5 rounded font-medium flex items-center gap-1 shrink-0 transition disabled:opacity-40 ${
-                isPickingThis
-                  ? "bg-indigo-600 text-white"
-                  : "bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30"
-              }`}>
+              className={`px-2.5 py-1.5 rounded font-medium flex items-center gap-1 shrink-0 transition disabled:opacity-40 ${isPickingThis
+                  ? "bg-coral-shimmer text-void-black font-semibold"
+                  : "bg-forest-moss hover:bg-forest-deep text-parchment border border-forest-deep"
+                }`}>
               <Crosshair className="w-3.5 h-3.5" />
               {isPickingThis ? "Cancelar" : "Elegir"}
             </button>
@@ -181,7 +179,7 @@ export function StepCard({
       {/* Value template for input & select */}
       {(step.type === "input" || step.type === "select") && (
         <div className="space-y-1.5">
-          <label className="block text-[11px] text-slate-400">
+          <label className="block text-[11px] text-ash">
             {step.type === "select"
               ? "Valor o texto de la opción a seleccionar:"
               : "Valor a escribir (usa variables o texto fijo):"}
@@ -200,19 +198,19 @@ export function StepCard({
                 ? "Ej: {{rol}} o Admin"
                 : "Ej: {{nombre}} o texto fijo"
             }
-            className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-60"
+            className="w-full bg-void-black border border-rim rounded px-2.5 py-1.5 text-parchment placeholder:text-ash/60 focus:outline-none focus:border-coral-shimmer focus:ring-1 focus:ring-coral-shimmer/30 disabled:opacity-60"
           />
           {mode === "records_loop" && columns.length > 0 && (
             <div className="flex items-center flex-wrap gap-1 pt-0.5">
-              <span className="text-[10px] text-slate-500">Insertar:</span>
+              <span className="text-[10px] text-ash">Insertar:</span>
               {columns.map((col) => (
                 <button
                   key={col}
                   type="button"
                   disabled={isRunning}
                   onClick={() => appendVariableToStep(col)}
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono text-[10px] flex items-center gap-0.5 disabled:opacity-40">
-                  <Plus className="w-2.5 h-2.5" />
+                  className="px-1.5 py-0.5 rounded bg-void-black hover:bg-obsidian border border-rim text-limestone hover:text-parchment font-mono text-[10px] flex items-center gap-0.5 disabled:opacity-40 transition">
+                  <Plus className="w-2.5 h-2.5 text-coral-shimmer" />
                   {col}
                 </button>
               ))}
@@ -224,14 +222,14 @@ export function StepCard({
       {/* Key selector for keypress */}
       {step.type === "keypress" && (
         <div className="flex items-center justify-between gap-2">
-          <label className="text-[11px] text-slate-400">
+          <label className="text-[11px] text-ash">
             Tecla a presionar:
           </label>
           <select
             disabled={isRunning}
             value={step.key ?? "Enter"}
             onChange={(e) => onUpdate(step.id, { key: e.target.value })}
-            className="w-40 bg-slate-950 border border-slate-800 rounded px-2.5 py-1 font-mono text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-60">
+            className="w-40 bg-void-black border border-rim rounded px-2.5 py-1 font-mono text-[11px] text-parchment focus:outline-none focus:border-coral-shimmer disabled:opacity-60">
             <option value="Enter">Enter (Enviar)</option>
             <option value="Tab">Tab (Siguiente)</option>
             <option value="Escape">Escape (Cerrar)</option>
@@ -248,7 +246,7 @@ export function StepCard({
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <label className="block text-[11px] text-slate-400">
+              <label className="block text-[11px] text-ash">
                 Columna de salida (CSV):
               </label>
               <input
@@ -261,11 +259,11 @@ export function StepCard({
                   })
                 }
                 placeholder="Ej: titulo_producto"
-                className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 font-mono text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-60"
+                className="w-full bg-void-black border border-rim rounded px-2 py-1 font-mono text-[11px] text-parchment placeholder:text-ash/60 focus:outline-none focus:border-coral-shimmer disabled:opacity-60"
               />
             </div>
             <div className="space-y-1">
-              <label className="block text-[11px] text-slate-400">
+              <label className="block text-[11px] text-ash">
                 Propiedad a leer:
               </label>
               <select
@@ -276,7 +274,7 @@ export function StepCard({
                     extractSource: e.target.value as ExtractSourceType
                   })
                 }
-                className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-60">
+                className="w-full bg-void-black border border-rim rounded px-2 py-1 text-[11px] text-parchment focus:outline-none focus:border-coral-shimmer disabled:opacity-60">
                 <option value="textContent">Texto visible</option>
                 <option value="value">Valor (value)</option>
                 <option value="attribute">Atributo HTML</option>
@@ -286,7 +284,7 @@ export function StepCard({
 
           {step.extractSource === "attribute" && (
             <div className="space-y-1">
-              <label className="block text-[11px] text-slate-400">
+              <label className="block text-[11px] text-ash">
                 Nombre del atributo HTML:
               </label>
               <input
@@ -299,7 +297,7 @@ export function StepCard({
                   })
                 }
                 placeholder="Ej: href, src, data-id"
-                className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1 font-mono text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-60"
+                className="w-full bg-void-black border border-rim rounded px-2.5 py-1 font-mono text-[11px] text-parchment placeholder:text-ash/60 focus:outline-none focus:border-coral-shimmer disabled:opacity-60"
               />
             </div>
           )}
@@ -309,7 +307,7 @@ export function StepCard({
       {/* Wait duration */}
       {step.type === "wait" && (
         <div className="flex items-center justify-between gap-2">
-          <label className="text-[11px] text-slate-400">
+          <label className="text-[11px] text-ash">
             Tiempo de espera (milisegundos):
           </label>
           <input
@@ -323,7 +321,7 @@ export function StepCard({
                 waitMs: Number(e.target.value)
               })
             }
-            className="w-28 bg-slate-950 border border-slate-800 rounded px-2.5 py-1 text-right font-mono text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-60"
+            className="w-28 bg-void-black border border-rim rounded px-2.5 py-1 text-right font-mono text-parchment focus:outline-none focus:border-coral-shimmer disabled:opacity-60"
           />
         </div>
       )}

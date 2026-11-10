@@ -148,8 +148,8 @@ export function StepsTab() {
           isRunning={isRunning}
         />
       ) : (
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
-          <div className="text-[11px] font-medium text-slate-400 mb-1.5">
+        <div className="bg-ember border border-rim rounded-lg p-2.5">
+          <div className="text-[11px] font-medium text-ash mb-1.5">
             Variables disponibles del listado ({records?.length ?? 0} filas):
           </div>
           {columns.length > 0 ? (
@@ -157,13 +157,13 @@ export function StepsTab() {
               {columns.map((col) => (
                 <span
                   key={col}
-                  className="px-2 py-0.5 rounded bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-mono text-[11px]">
+                  className="px-2 py-0.5 rounded bg-void-black border border-rim text-limestone font-mono text-[11px]">
                   {`{{${col}}}`}
                 </span>
               ))}
             </div>
           ) : (
-            <p className="text-slate-500 text-[11px]">
+            <p className="text-ash/60 text-[11px]">
               Sin columnas detectadas. Carga registros en la pestaña
               &ldquo;Registros&rdquo;.
             </p>
@@ -177,21 +177,21 @@ export function StepsTab() {
           type="button"
           disabled={isRunning}
           onClick={() => addStep("extract")}
-          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-slate-200 font-medium transition">
-          <ScanText className="w-3.5 h-3.5 text-pink-400" />+ Extraer
+          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
+          <ScanText className="w-3.5 h-3.5 text-coral-shimmer" />+ Extraer
         </button>
         <button
           type="button"
           disabled={isRunning}
           onClick={() => addStep("click")}
-          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-slate-200 font-medium transition">
-          <MousePointerClick className="w-3.5 h-3.5 text-indigo-400" />+ Clic
+          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
+          <MousePointerClick className="w-3.5 h-3.5 text-fog" />+ Clic
         </button>
         <button
           type="button"
           disabled={isRunning}
           onClick={() => addStep("wait")}
-          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-slate-200 font-medium transition">
+          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
           <Clock className="w-3.5 h-3.5 text-amber-400" />+ Espera
         </button>
         {currentMode === "records_loop" && (
@@ -200,22 +200,22 @@ export function StepsTab() {
               type="button"
               disabled={isRunning}
               onClick={() => addStep("input")}
-              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-slate-200 font-medium transition">
-              <Type className="w-3.5 h-3.5 text-emerald-400" />+ Texto
+              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
+              <Type className="w-3.5 h-3.5 text-forest-deep" />+ Texto
             </button>
             <button
               type="button"
               disabled={isRunning}
               onClick={() => addStep("select")}
-              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-slate-200 font-medium transition">
-              <ListFilter className="w-3.5 h-3.5 text-cyan-400" />+ Select
+              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
+              <ListFilter className="w-3.5 h-3.5 text-limestone" />+ Select
             </button>
             <button
               type="button"
               disabled={isRunning}
               onClick={() => addStep("keypress")}
-              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-slate-200 font-medium transition">
-              <Keyboard className="w-3.5 h-3.5 text-purple-400" />+ Tecla
+              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
+              <Keyboard className="w-3.5 h-3.5 text-copper" />+ Tecla
             </button>
           </>
         )}

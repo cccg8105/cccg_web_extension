@@ -59,460 +59,371 @@ function buildElementTagAndClassSelector(el: Element): string {
   if (classes.length === 0) {
     return tag
   }
-  return `${tag}.${classes.map((c) => CSS.escape(c)).join(".")}`
+  return `${tag}.${classes.join(".")}`
 }
 
-function countMatchingListContainers(
-  itemSelector: string,
-  relativeSelector: string
-): { matched: number; total: number } {
+function buildItemRelativeSelector(
+  el: Element,
+  itemContainer: Element
+): string {
+  if (el === itemContainer) {
+    return ":scope"
+  }
+
+  const tagAndClass = buildElementTagAndClassSelector(el)
+
   try {
-    const containers = Array.from(document.querySelectorAll(itemSelector))
-    const total = containers.length
-    if (total === 0) return { matched: 0, total: 0 }
-    if (!relativeSelector || relativeSelector === ":scope") {
-      return { matched: total, total }
+    const matches = Array.from(itemContainer.querySelectorAll(tagAndClass))
+    if (matches.length === 1 && matches[0] === el) {
+      return tagAndClass
+    }
+  } catch {
+    // continue fallback
+  }
+
+  try {
+    const selector = finder(el, {
+      root: itemContainer,
+      className: isStableClassName,
+      tagName: () => true,
+      seedMinLength: 1,
+      optimizedMinLength: 2
+    })
+
+    if (selector) {
+      return selector
+    }
+  } catch (err) {
+    console.warn("AutoLoop finder relative fallback:", err)
+  }
+
+  const tag = el.tagName.toLowerCase()
+  return tag
+}
+
+function findBestRepeatingParent(
+  targetEl: Element
+): { container: Element; selector: string; count: number } | null {
+  let current: Element | null = targetEl
+
+  while (current && current !== document.body && current !== document.documentElement) {
+    const tag = current.tagName.toLowerCase()
+    const classes = getStableClasses(current)
+
+    const candidateSelectors: string[] = []
+
+    if (classes.length > 0) {
+      candidateSelectors.push(`.${classes[0]}`)
+      if (classes.length > 1) {
+        candidateSelectors.push(`.${classes[0]}.${classes[1]}`)
+      }
+      candidateSelectors.push(`${tag}.${classes[0]}`)
     }
 
-    let matched = 0
-    for (const container of containers) {
-      if (container.querySelector(relativeSelector)) {
-        matched++
+    if (tag === "li" || tag === "tr") {
+      candidateSelectors.push(tag)
+    }
+
+    for (const sel of candidateSelectors) {
+      try {
+        const matches = Array.from(document.querySelectorAll(sel))
+        if (matches.length >= 2 && matches.includes(current)) {
+          return {
+            container: current,
+            selector: sel,
+            count: matches.length
+          }
+        }
+      } catch {
+        // ignore invalid selector
       }
     }
-    return { matched, total }
-  } catch {
-    return { matched: 0, total: 0 }
-  }
-}
 
-function extractStableIdPrefix(rawId: string): string | null {
-  if (!rawId) return null
-  // Ej: "testId-pod-image-https://..." o "pod-title-883856491" -> "testId-pod-image-" o "pod-title-"
-  const match = rawId.match(/^([a-zA-Z][a-zA-Z0-9_-]*?[-_])(?:\d|https?:)/i)
-  if (match && match[1] && match[1].length >= 4) {
-    return match[1]
-  }
-  return null
-}
-
-function buildStructuralRelativePath(el: Element, itemRoot: Element): string {
-  const segments: string[] = []
-  let current: Element | null = el
-
-  while (current && current !== itemRoot && segments.length < 4) {
-    segments.unshift(buildElementTagAndClassSelector(current))
     current = current.parentElement
   }
 
-  return segments.join(" > ") || el.tagName.toLowerCase()
+  return null
 }
 
-function computeRelativeListItemSelector(
-  el: Element,
-  itemRoot: Element,
-  itemSelector: string
-): { selector: string; matched: number; total: number } {
-  const baseTotal = countMatchingListContainers(itemSelector, ":scope").total
+function countMatchingItemsInsideContainer(
+  relativeSelector: string,
+  containerSelector?: string
+): { matchCount: number; totalListCount: number } | null {
+  if (!containerSelector) return null
 
-  if (el === itemRoot) {
-    return { selector: ":scope", matched: baseTotal, total: baseTotal }
-  }
-
-  const candidates: string[] = []
-
-  // Candidato 1: finder sin IDs únicos ni clases generadas (jsx-*)
   try {
-    const finderRelative = finder(el, {
-      root: itemRoot,
-      idName: () => false,
+    const containers = Array.from(document.querySelectorAll(containerSelector))
+    if (containers.length === 0) return null
+
+    let matchCount = 0
+    for (const cont of containers) {
+      if (relativeSelector === ":scope") {
+        matchCount++
+      } else {
+        const found = cont.querySelector(relativeSelector)
+        if (found) matchCount++
+      }
+    }
+
+    return {
+      matchCount,
+      totalListCount: containers.length
+    }
+  } catch {
+    return null
+  }
+}
+
+function buildCleanCssSelector(el: Element): string {
+  try {
+    return finder(el, {
+      root: document.body,
       className: isStableClassName,
-      timeoutMs: 400
+      tagName: () => true,
+      seedMinLength: 1,
+      optimizedMinLength: 2
     })
-    if (finderRelative && !finderRelative.includes("#")) {
-      candidates.push(finderRelative)
+  } catch (err) {
+    console.warn("AutoLoop finder error, falling back to basic selector:", err)
+    const tag = el.tagName.toLowerCase()
+    if (el.id) {
+      return `#${el.id}`
     }
-  } catch {
-    // Continúa con candidatos alternativos
-  }
-
-  // Candidato 2: Prefijo estable de ID o data-testid (ej. img[id^="testId-pod-image-"])
-  const idPrefix = extractStableIdPrefix(el.id)
-  if (idPrefix) {
-    const escapedPrefix = idPrefix.replace(/"/g, '\\"')
-    candidates.push(`${el.tagName.toLowerCase()}[id^="${escapedPrefix}"]`)
-  }
-
-  const dataTestId =
-    el.getAttribute("data-testid") || el.getAttribute("data-test-id")
-  if (dataTestId && !/\d{4,}/.test(dataTestId)) {
-    const escapedTestId = dataTestId.replace(/"/g, '\\"')
-    candidates.push(
-      `${el.tagName.toLowerCase()}[data-testid="${escapedTestId}"]`
-    )
-  }
-
-  // Candidato 3: Etiqueta + clases estables propias
-  const tagAndClass = buildElementTagAndClassSelector(el)
-  if (tagAndClass.includes(".")) {
-    candidates.push(tagAndClass)
-  }
-
-  // Candidato 4: Ruta estructural de etiquetas/clases desde el contenedor
-  const structuralPath = buildStructuralRelativePath(el, itemRoot)
-  candidates.push(structuralPath)
-
-  // Candidato 5: Etiqueta simple (ej. "img", "h2", "a") si es única o representativa
-  candidates.push(el.tagName.toLowerCase())
-
-  let bestSelector = candidates[0] ?? el.tagName.toLowerCase()
-  let bestMatched = 0
-
-  for (const candidate of candidates) {
-    try {
-      const firstMatchInCurrentItem = itemRoot.querySelector(candidate)
-      if (!firstMatchInCurrentItem) continue
-
-      const { matched } = countMatchingListContainers(itemSelector, candidate)
-      // Si el elemento que el usuario señaló coincide exactamente y tiene mejor cobertura multi-ítem
-      const isExactTarget = firstMatchInCurrentItem === el
-      const effectiveScore = isExactTarget ? matched + 0.5 : matched
-
-      if (effectiveScore > bestMatched) {
-        bestMatched = effectiveScore
-        bestSelector = candidate
-      }
-
-      if (isExactTarget && baseTotal > 1 && matched >= Math.ceil(baseTotal * 0.8)) {
-        break
-      }
-    } catch {
-      // Selector candidato inválido
+    const stable = getStableClasses(el)
+    if (stable.length > 0) {
+      return `${tag}.${stable.slice(0, 2).join(".")}`
     }
-  }
-
-  const finalStats = countMatchingListContainers(itemSelector, bestSelector)
-  return {
-    selector: bestSelector,
-    matched: finalStats.matched,
-    total: finalStats.total
+    return tag
   }
 }
 
-function computeRepeatingListSelector(target: Element): {
-  element: Element
-  selector: string
-  count: number
-} {
-  let candidate: Element | null = target
+export function PickerOverlay() {
+  const [executionState, setExecutionState] = useStorage<ExecutionState>({
+    key: STORAGE_KEYS.EXECUTION_STATE,
+    instance: workflowStorage
+  })
 
-  while (
-    candidate &&
-    candidate !== document.body &&
-    candidate !== document.documentElement
-  ) {
-    const parent = candidate.parentElement
-    if (!parent) break
+  const [steps, setSteps] = useStorage<WorkflowStep[]>({
+    key: STORAGE_KEYS.STEPS,
+    instance: workflowStorage
+  })
 
-    const candidateTag = candidate.tagName.toLowerCase()
-    const sameTagSiblings = Array.from(parent.children).filter(
-      (child) => child.tagName.toLowerCase() === candidateTag
-    )
+  const [workflowMode] = useStorage<WorkflowMode>({
+    key: STORAGE_KEYS.WORKFLOW_MODE,
+    instance: workflowStorage
+  })
 
-    if (sameTagSiblings.length >= 2) {
-      const itemPart = buildElementTagAndClassSelector(candidate)
-      let parentSelector = ""
-      try {
-        parentSelector = finder(parent, {
-          root: document.body,
-          className: isStableClassName,
-          timeoutMs: 300
-        })
-      } catch {
-        parentSelector = buildElementTagAndClassSelector(parent)
-      }
+  const [domListConfig, setDomListConfig] = useStorage<DomListConfig>({
+    key: STORAGE_KEYS.DOM_LIST_CONFIG,
+    instance: workflowStorage
+  })
 
-      const scopedCandidateSelector = `${parentSelector} > ${itemPart}`
-      try {
-        const directMatches = document.querySelectorAll(scopedCandidateSelector)
-        if (directMatches.length >= 2) {
-          return {
-            element: candidate,
-            selector: scopedCandidateSelector,
-            count: directMatches.length
-          }
-        }
-      } catch {
-        // Fallback to simpler selector below
-      }
-
-      const fallbackScopedSelector = `${parentSelector} > ${candidateTag}`
-      try {
-        const tagMatches = document.querySelectorAll(fallbackScopedSelector)
-        if (tagMatches.length >= 2) {
-          return {
-            element: candidate,
-            selector: fallbackScopedSelector,
-            count: tagMatches.length
-          }
-        }
-      } catch {
-        // Continue walking up
-      }
-    }
-
-    candidate = parent
-  }
-
-  const fallbackSelector = buildElementTagAndClassSelector(target)
-  try {
-    const count = document.querySelectorAll(fallbackSelector).length
-    return {
-      element: target,
-      selector: fallbackSelector,
-      count
-    }
-  } catch {
-    const tag = target.tagName.toLowerCase()
-    return {
-      element: target,
-      selector: tag,
-      count: document.querySelectorAll(tag).length
-    }
-  }
-}
-
-const PickerOverlay = () => {
-  const [executionState, setExecutionState] = useStorage<ExecutionState>(
-    {
-      key: STORAGE_KEYS.EXECUTION_STATE,
-      instance: workflowStorage
-    },
-    DEFAULT_EXECUTION_STATE
-  )
-
-  const [steps, setSteps] = useStorage<WorkflowStep[]>(
-    {
-      key: STORAGE_KEYS.STEPS,
-      instance: workflowStorage
-    },
-    []
-  )
-
-  const [workflowMode] = useStorage<WorkflowMode>(
-    {
-      key: STORAGE_KEYS.WORKFLOW_MODE,
-      instance: workflowStorage
-    },
-    DEFAULT_WORKFLOW_MODE
-  )
-
-  const [domListConfig, setDomListConfig] = useStorage<DomListConfig>(
-    {
-      key: STORAGE_KEYS.DOM_LIST_CONFIG,
-      instance: workflowStorage
-    },
-    DEFAULT_DOM_LIST_CONFIG
-  )
-
+  const [hoveredEl, setHoveredEl] = useState<Element | null>(null)
   const [box, setBox] = useState<HighlightBox | null>(null)
 
   const isPicking = executionState?.status === "picking"
   const pickingTarget = executionState?.pickingTarget ?? "step"
+  const isDomListMode = workflowMode === "dom_list_extract"
 
   useEffect(() => {
-    if (!isPicking) {
+    if (!hoveredEl) {
       setBox(null)
       return
     }
 
-    const computeSafeSelector = (el: Element, rootEl?: Element): string => {
-      try {
-        return finder(el, {
-          root: rootEl ?? document.body,
-          className: isStableClassName,
-          timeoutMs: 400
-        })
-      } catch {
-        if (el.id && !rootEl) {
-          return `#${CSS.escape(el.id)}`
-        }
-        return buildElementTagAndClassSelector(el)
-      }
-    }
+    const rect = hoveredEl.getBoundingClientRect()
+    let previewSelector = ""
+    let matchCount: number | undefined
+    let totalListCount: number | undefined
 
-    const computeStepSelectorWithCoverage = (
-      el: Element
-    ): { selector: string; matched?: number; total?: number } => {
-      const configuredItemSelector = domListConfig?.itemSelector?.trim()
-      if (workflowMode === "dom_list_extract" && configuredItemSelector) {
-        try {
-          const itemRoot = el.closest(configuredItemSelector)
-          if (itemRoot) {
-            return computeRelativeListItemSelector(
-              el,
-              itemRoot,
-              configuredItemSelector
-            )
+    if (isDomListMode && pickingTarget === "list_container") {
+      const best = findBestRepeatingParent(hoveredEl)
+      if (best) {
+        previewSelector = best.selector
+        matchCount = best.count
+      } else {
+        previewSelector = buildCleanCssSelector(hoveredEl)
+      }
+    } else if (isDomListMode && pickingTarget === "step") {
+      const containerSelector = domListConfig?.itemSelector
+      if (containerSelector) {
+        const itemContainer = hoveredEl.closest(containerSelector)
+        if (itemContainer) {
+          previewSelector = buildItemRelativeSelector(hoveredEl, itemContainer)
+          const counts = countMatchingItemsInsideContainer(
+            previewSelector,
+            containerSelector
+          )
+          if (counts) {
+            matchCount = counts.matchCount
+            totalListCount = counts.totalListCount
           }
-        } catch {
-          // Invalid itemSelector, fallback to document selector
+        } else {
+          previewSelector = buildCleanCssSelector(hoveredEl)
         }
+      } else {
+        previewSelector = buildCleanCssSelector(hoveredEl)
       }
-      return { selector: computeSafeSelector(el) }
+    } else {
+      previewSelector = buildCleanCssSelector(hoveredEl)
     }
 
-    const isExtensionOverlayElement = (el: Element | null): boolean => {
-      if (!el) return true
-      return Boolean(el.closest("plasmo-csui"))
+    setBox({
+      top: rect.top,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height,
+      tagName: hoveredEl.tagName.toLowerCase(),
+      previewSelector,
+      matchCount,
+      totalListCount
+    })
+  }, [hoveredEl, isDomListMode, pickingTarget, domListConfig])
+
+  useEffect(() => {
+    if (!isPicking) {
+      setHoveredEl(null)
+      setBox(null)
+      return
     }
 
-    const handleMouseMove = (event: MouseEvent) => {
-      const target = document.elementFromPoint(event.clientX, event.clientY)
-      if (!target || isExtensionOverlayElement(target)) {
+    const handleMouseMove = (e: MouseEvent) => {
+      const target = e.target as Element | null
+      if (!target) return
+
+      if (target.closest && target.closest("#rpa-picker-overlay-root")) {
         return
       }
 
-      if (pickingTarget === "list_container") {
-        const listInfo = computeRepeatingListSelector(target)
-        const rect = listInfo.element.getBoundingClientRect()
-        setBox({
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
-          tagName: listInfo.element.tagName.toLowerCase(),
-          previewSelector: listInfo.selector,
-          matchCount: listInfo.count
-        })
-        return
-      }
-
-      const rect = target.getBoundingClientRect()
-      if (pickingTarget === "pagination_next") {
-        setBox({
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
-          tagName: target.tagName.toLowerCase(),
-          previewSelector: computeSafeSelector(target)
-        })
-        return
-      }
-
-      const stepSelInfo = computeStepSelectorWithCoverage(target)
-      setBox({
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-        tagName: target.tagName.toLowerCase(),
-        previewSelector: stepSelInfo.selector,
-        matchCount: stepSelInfo.matched,
-        totalListCount: stepSelInfo.total
-      })
+      setHoveredEl(target)
     }
 
-    const handleClick = async (event: MouseEvent) => {
-      const target = document.elementFromPoint(event.clientX, event.clientY)
-      if (!target || isExtensionOverlayElement(target)) {
+    const handleClick = (e: MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      e.stopImmediatePropagation()
+
+      const target = e.target as Element | null
+      if (!target) return
+
+      if (target.closest && target.closest("#rpa-picker-overlay-root")) {
         return
       }
 
-      event.preventDefault()
-      event.stopPropagation()
-      event.stopImmediatePropagation()
+      if (isDomListMode && pickingTarget === "list_container") {
+        const best = findBestRepeatingParent(target)
+        const chosenSelector = best ? best.selector : buildCleanCssSelector(target)
+        const detectedCount = best ? best.count : 1
 
-      const timestamp = new Date().toLocaleTimeString()
-
-      if (pickingTarget === "list_container") {
-        const listInfo = computeRepeatingListSelector(target)
-        await setDomListConfig({
+        const updatedConfig: DomListConfig = {
           ...(domListConfig ?? DEFAULT_DOM_LIST_CONFIG),
-          itemSelector: listInfo.selector
-        })
-        await setExecutionState({
+          itemSelector: chosenSelector
+        }
+        setDomListConfig(updatedConfig)
+
+        setExecutionState({
           ...(executionState ?? DEFAULT_EXECUTION_STATE),
           status: "idle",
           pickingTarget: undefined,
           pickingForStepId: undefined,
-          lastPickedSelector: listInfo.selector,
-          detectedListCount: listInfo.count,
-          logs: [
-            ...(executionState?.logs ?? []).slice(-99),
-            `[${timestamp}] Lista capturada: ${listInfo.selector} (${listInfo.count} elementos detectados)`
-          ]
+          detectedListCount: detectedCount
         })
+
+        setHoveredEl(null)
+        setBox(null)
         return
       }
 
-      if (pickingTarget === "pagination_next") {
-        const nextSelector = computeSafeSelector(target)
-        const currentConfig = domListConfig ?? DEFAULT_DOM_LIST_CONFIG
-        await setDomListConfig({
-          ...currentConfig,
+      if (isDomListMode && pickingTarget === "pagination_next") {
+        const nextSelector = buildCleanCssSelector(target)
+
+        const currentPagination =
+          domListConfig?.pagination ?? DEFAULT_DOM_LIST_CONFIG.pagination!
+
+        const updatedConfig: DomListConfig = {
+          ...(domListConfig ?? DEFAULT_DOM_LIST_CONFIG),
           pagination: {
-            enabled: currentConfig.pagination?.enabled ?? true,
-            nextButtonSelector: nextSelector,
-            waitAfterClickMs:
-              currentConfig.pagination?.waitAfterClickMs ?? 2000,
-            maxPages: currentConfig.pagination?.maxPages ?? 5
+            ...currentPagination,
+            enabled: true,
+            nextButtonSelector: nextSelector
           }
-        })
-        await setExecutionState({
-          ...(executionState ?? DEFAULT_EXECUTION_STATE),
-          status: "idle",
-          pickingTarget: undefined,
-          pickingForStepId: undefined,
-          lastPickedSelector: nextSelector,
-          logs: [
-            ...(executionState?.logs ?? []).slice(-99),
-            `[${timestamp}] Botón Siguiente capturado: ${nextSelector}`
-          ]
-        })
-        return
-      }
+        }
+        setDomListConfig(updatedConfig)
 
-      const stepSelInfo = computeStepSelectorWithCoverage(target)
-      const selector = stepSelInfo.selector
-      const targetStepId = executionState?.pickingForStepId
-
-      if (targetStepId && Array.isArray(steps)) {
-        const updatedSteps = steps.map((step) =>
-          step.id === targetStepId ? { ...step, selector } : step
-        )
-        await setSteps(updatedSteps)
-      }
-
-      const coverageSuffix =
-        stepSelInfo.matched !== undefined && stepSelInfo.total
-          ? ` (coincide en ${stepSelInfo.matched}/${stepSelInfo.total} ítems)`
-          : ""
-
-      await setExecutionState({
-        ...(executionState ?? DEFAULT_EXECUTION_STATE),
-        status: "idle",
-        pickingTarget: undefined,
-        pickingForStepId: undefined,
-        lastPickedSelector: selector,
-        logs: [
-          ...(executionState?.logs ?? []).slice(-99),
-          `[${timestamp}] Selector capturado: ${selector}${coverageSuffix}`
-        ]
-      })
-    }
-
-    const handleKeyDown = async (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault()
-        event.stopPropagation()
-        await setExecutionState({
+        setExecutionState({
           ...(executionState ?? DEFAULT_EXECUTION_STATE),
           status: "idle",
           pickingTarget: undefined,
           pickingForStepId: undefined
         })
+
+        setHoveredEl(null)
+        setBox(null)
+        return
+      }
+
+      let chosenSelector = ""
+      const containerSelector = domListConfig?.itemSelector
+
+      if (isDomListMode && containerSelector) {
+        const itemContainer = target.closest(containerSelector)
+        if (itemContainer) {
+          chosenSelector = buildItemRelativeSelector(target, itemContainer)
+        } else {
+          chosenSelector = buildCleanCssSelector(target)
+        }
+      } else {
+        chosenSelector = buildCleanCssSelector(target)
+      }
+
+      const stepId = executionState?.pickingForStepId
+
+      if (stepId && steps) {
+        const updatedSteps = steps.map((s) => {
+          if (s.id !== stepId) return s
+
+          let autoExtractColumn = s.outputColumn
+          if (s.type === "extract" && !autoExtractColumn) {
+            const rawTag = target.tagName.toLowerCase()
+            const cleanClasses = getStableClasses(target)
+            autoExtractColumn =
+              cleanClasses.length > 0
+                ? `${rawTag}_${cleanClasses[0]}`
+                : `${rawTag}_col`
+          }
+
+          return {
+            ...s,
+            selector: chosenSelector,
+            outputColumn: autoExtractColumn
+          }
+        })
+        setSteps(updatedSteps)
+      }
+
+      setExecutionState({
+        ...(executionState ?? DEFAULT_EXECUTION_STATE),
+        status: "idle",
+        pickingTarget: undefined,
+        pickingForStepId: undefined
+      })
+
+      setHoveredEl(null)
+      setBox(null)
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault()
+        e.stopPropagation()
+        setExecutionState({
+          ...(executionState ?? DEFAULT_EXECUTION_STATE),
+          status: "idle",
+          pickingTarget: undefined,
+          pickingForStepId: undefined
+        })
+        setHoveredEl(null)
+        setBox(null)
       }
     }
 
@@ -550,8 +461,8 @@ const PickerOverlay = () => {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[2147483647] font-sans">
-      <div className="fixed top-3 left-1/2 -translate-x-1/2 pointer-events-auto flex items-center gap-3 bg-slate-900/95 text-white px-4 py-2 rounded-full shadow-xl border border-indigo-500/60 text-xs">
-        <span className="inline-block w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse" />
+      <div className="fixed top-3 left-1/2 -translate-x-1/2 pointer-events-auto flex items-center gap-3 bg-void-black/95 text-parchment px-4 py-2 rounded-full shadow-2xl border border-coral-shimmer/50 backdrop-blur text-xs">
+        <span className="inline-block w-2.5 h-2.5 rounded-full bg-coral-shimmer shadow-[0_0_8px_rgba(232,118,80,0.8)] animate-pulse" />
         <span>{bannerMessage}</span>
         <button
           type="button"
@@ -563,7 +474,7 @@ const PickerOverlay = () => {
               pickingForStepId: undefined
             })
           }
-          className="ml-1 px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
+          className="ml-1 px-2.5 py-0.5 rounded bg-ember hover:bg-obsidian text-ash hover:text-parchment border border-rim transition">
           Cancelar
         </button>
       </div>
@@ -576,19 +487,19 @@ const PickerOverlay = () => {
             width: `${box.width}px`,
             height: `${box.height}px`
           }}
-          className="fixed pointer-events-none border-2 border-indigo-500 bg-indigo-500/15 rounded-sm transition-all duration-75">
-          <div className="absolute -top-7 left-0 flex items-center gap-1.5 bg-indigo-600 text-white text-[11px] px-2 py-0.5 rounded shadow-md whitespace-nowrap max-w-[440px] overflow-hidden text-ellipsis">
-            <span className="font-bold uppercase text-indigo-200">
+          className="fixed pointer-events-none border-2 border-coral-shimmer bg-coral-shimmer/15 rounded-sm shadow-[0_0_12px_rgba(232,118,80,0.25)] transition-all duration-75">
+          <div className="absolute -top-7 left-0 flex items-center gap-1.5 bg-void-black border border-rim text-parchment text-[11px] px-2 py-0.5 rounded shadow-lg whitespace-nowrap max-w-[440px] overflow-hidden text-ellipsis">
+            <span className="font-bold uppercase text-coral-shimmer">
               {box.tagName}
             </span>
             {box.matchCount !== undefined && (
-              <span className="px-1.5 py-0.2 rounded bg-emerald-500/30 text-emerald-100 font-semibold">
+              <span className="px-1.5 py-0.2 rounded bg-forest-moss border border-forest-deep text-fog font-semibold font-mono">
                 {box.totalListCount
                   ? `${box.matchCount}/${box.totalListCount} ítems`
                   : `${box.matchCount} ítems`}
               </span>
             )}
-            <span className="font-mono truncate">{box.previewSelector}</span>
+            <span className="font-mono text-parchment truncate">{box.previewSelector}</span>
           </div>
         </div>
       )}

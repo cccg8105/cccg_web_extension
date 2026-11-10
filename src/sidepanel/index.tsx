@@ -74,7 +74,7 @@ function SidePanelApp() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans text-xs">
+    <div className="min-h-screen bg-obsidian text-parchment flex flex-col font-sans text-xs">
       <SidePanelHeader status={executionState?.status} mode={currentMode} />
 
       <ModeSelectorBar
@@ -86,14 +86,14 @@ function SidePanelApp() {
       <nav
         className={`grid ${
           isDomListMode ? "grid-cols-2" : "grid-cols-3"
-        } bg-slate-900/60 border-b border-slate-800 p-1 gap-1`}>
+        } bg-void-black border-b border-rim p-1 gap-1`}>
         <button
           type="button"
           onClick={() => setActiveTab("steps")}
-          className={`flex items-center justify-center gap-1.5 py-2 rounded font-medium transition ${
+          className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md font-medium transition ${
             activeTab === "steps"
-              ? "bg-indigo-600 text-white shadow"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+              ? "bg-forest-deep text-parchment border border-forest-deep shadow-sm"
+              : "text-ash hover:text-parchment hover:bg-ember"
           }`}>
           <ListOrdered className="w-3.5 h-3.5" />
           Pasos ({steps?.length ?? 0})
@@ -103,10 +103,10 @@ function SidePanelApp() {
           <button
             type="button"
             onClick={() => setActiveTab("data")}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded font-medium transition ${
+            className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md font-medium transition ${
               activeTab === "data"
-                ? "bg-indigo-600 text-white shadow"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                ? "bg-forest-deep text-parchment border border-forest-deep shadow-sm"
+                : "text-ash hover:text-parchment hover:bg-ember"
             }`}>
             <Database className="w-3.5 h-3.5" />
             Registros ({records?.length ?? 0})
@@ -116,10 +116,10 @@ function SidePanelApp() {
         <button
           type="button"
           onClick={() => setActiveTab("run")}
-          className={`flex items-center justify-center gap-1.5 py-2 rounded font-medium transition ${
+          className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md font-medium transition ${
             activeTab === "run"
-              ? "bg-indigo-600 text-white shadow"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+              ? "bg-forest-deep text-parchment border border-forest-deep shadow-sm"
+              : "text-ash hover:text-parchment hover:bg-ember"
           }`}>
           <Play className="w-3.5 h-3.5" />
           Ejecutar
