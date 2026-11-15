@@ -12,7 +12,7 @@
 | Orden | Versión | Enfoque Principal | Estado | Hito Clave |
 | :---: | :--- | :--- | :---: | :--- |
 | **1** | **`v1.1.0`** | **Selectores Autocurativos con Aprendizaje por Refuerzo y Pasos Condicionales** | `[ ]` Planificado | Motor RL (`UCB1` + `$Q$-Learning` + Huella $\mathcal{F}$) para auto-explorar y memorizar selectores (`F-18`), junto con pasos opcionales/condicionales (`F-11`). |
-| **2** | **`v1.2.0`** | **Automatización Asistida (Recorder)** | `[ ]` Por planificar | Modo Grabador de interacciones del usuario en la página activa (`F-10`). |
+| **2** | **`v1.2.0`** | **Extracción de Tablas HTML y Automatización Asistida** | `[ ]` Planificado | Modo dedicado para extracción masiva de tablas HTML con cabecera y columnas configurables (`F-19`) y modo Grabador (`F-10`). |
 
 ---
 
@@ -28,8 +28,17 @@
 
 ---
 
-## 3. Icebox (Ideas Futuras Post-`v1.1.0`)
+### Prioridad 2: `v1.2.0` — Extracción de Tablas HTML y Automatización Asistida
+> **Objetivo:** Proporcionar capacidades nativas para el raspado y extracción rápida de datos tabulares (`<table>`), permitiendo identificar dinámicamente columnas a partir de cualquier fila de encabezado y recorrer páginas con paginación automática sin requerir la creación manual de pasos individuales por celda.
+
+| Orden | Estado | ID | Feature | Prioridad | Esfuerzo | Capas MV3 Afectadas | Especificación |
+| :---: | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
+| **1** | `[ ]` | **F-19** | Modo dedicado para extracción automática de tablas HTML con selección de fila de cabecera y configuración por columna | **Alta** | L | `types`, `storage`, `contents`, `background`, `sidepanel` | [Ver F-19](./features/F-19-extraccion-tablas-html.md) |
+
+---
+
+## 3. Icebox (Ideas Futuras Post-`v1.2.0`)
 
 | Orden | ID | Idea / Funcionalidad | Prioridad | Esfuerzo Est. | Notas de Diseño |
 | :---: | :--- | :--- | :---: | :---: | :--- |
-| **3** | **F-10** | Modo Grabador (*Recorder*) de interacciones del usuario | Baja | L | Captura automática de eventos `click` e `input` en la pestaña activa para generar pasos sin crearlos manualmente. |
+| **1** | **F-10** | Modo Grabador (*Recorder*) de interacciones del usuario | Baja | L | Captura automática de eventos `click` e `input` en la pestaña activa para generar pasos sin crearlos manualmente. |
