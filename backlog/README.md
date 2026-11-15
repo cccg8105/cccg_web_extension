@@ -46,8 +46,13 @@ El número de versión en [`package.json`](../package.json) determina la versió
 2. Asígnale el siguiente identificador consecutivo (`F-XX`) y agrégala en la versión correspondiente (o en el *Icebox*) dentro de [`BACKLOG.md`](./BACKLOG.md).
 
 ### Paso 2: Implementar una feature
-1. Cambia su estado a `[-]` en [`BACKLOG.md`](./BACKLOG.md) y en su archivo individual dentro de `backlog/features/`.
-2. Implementa los cambios respetando [`docs/02-patrones-y-estandares.md`](../docs/02-patrones-y-estandares.md) y los playbooks de [`docs/03-guia-extensibilidad.md`](../docs/03-guia-extensibilidad.md).
+1. **Crear rama de Git dedicada (obligatorio):** Antes de modificar código o documentación, crea y cámbiate a una nueva rama desde `main`:
+   ```bash
+   git checkout -b feature/F-XX-nombre-corto
+   ```
+   *(Queda prohibido implementar features directamente sobre la rama `main`)*.
+2. Cambia el estado a `[-]` en [`BACKLOG.md`](./BACKLOG.md) y en su archivo individual dentro de `backlog/features/`.
+3. Implementa los cambios respetando [`docs/02-patrones-y-estandares.md`](../docs/02-patrones-y-estandares.md) y los playbooks de [`docs/03-guia-extensibilidad.md`](../docs/03-guia-extensibilidad.md).
 
 ### Paso 3: Cerrar una feature y liberar versión
 1. Marca todos los criterios de aceptación como `[x]` y actualiza el estado a `[x] Completado` dentro del archivo de la feature.
