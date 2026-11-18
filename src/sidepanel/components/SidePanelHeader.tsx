@@ -7,9 +7,11 @@ interface SidePanelHeaderProps {
 
 export function SidePanelHeader({ status, mode }: SidePanelHeaderProps) {
   const subtitle =
-    mode === "dom_list_extract"
-      ? "Extracción de datos sobre listas repetitivas del DOM"
-      : "Automatización iterativa por lista de registros (CSV/JSON)"
+    mode === "html_table_extract"
+      ? "Extracción estructurada de tablas HTML con cabecera configurable"
+      : mode === "dom_list_extract"
+        ? "Extracción de datos sobre listas repetitivas del DOM"
+        : "Automatización iterativa por lista de registros (CSV/JSON)"
 
   return (
     <header className="px-4 py-3 bg-void-black border-b border-rim flex items-center justify-between">

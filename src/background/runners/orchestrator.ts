@@ -3,6 +3,7 @@ import {
   type ExecutionLoopContext,
   runRecordsIteration
 } from "~background/runners/records-runner"
+import { runHtmlTableExtraction } from "~background/runners/table-runner"
 import { appendLogEntry, updateExecutionState } from "~background/state-manager"
 import {
   DEFAULT_EXECUTION_OPTIONS,
@@ -36,6 +37,8 @@ export async function runWorkflowLoop(): Promise<void> {
 
     if (mode === "dom_list_extract") {
       await runDomListExtraction(loopContext)
+    } else if (mode === "html_table_extract") {
+      await runHtmlTableExtraction(loopContext)
     } else {
       await runRecordsIteration(loopContext)
     }
@@ -73,9 +76,11 @@ export async function startWorkflowLoop(tabId?: number): Promise<void> {
         : ""
 
   const startMessage =
-    mode === "dom_list_extract"
-      ? `Iniciando extracción de lista web${rangeSuffix}...`
-      : `Iniciando ejecución iterativa por registros${rangeSuffix}...`
+    mode === "html_table_extract"
+      ? `Iniciando extracción de tabla HTML${rangeSuffix}...`
+      : mode === "dom_list_extract"
+        ? `Iniciando extracción de lista web${rangeSuffix}...`
+        : `Iniciando ejecución iterativa por registros${rangeSuffix}...`
 
   await updateExecutionState((prev) => ({
     ...prev,

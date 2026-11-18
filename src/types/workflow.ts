@@ -8,9 +8,32 @@ export type ActionType =
 
 export type ExtractSourceType = "textContent" | "value" | "attribute"
 
-export type WorkflowMode = "records_loop" | "dom_list_extract"
+export type WorkflowMode =
+  | "records_loop"
+  | "dom_list_extract"
+  | "html_table_extract"
 
-export type PickingTargetType = "step" | "list_container" | "pagination_next"
+export type PickingTargetType =
+  | "step"
+  | "list_container"
+  | "pagination_next"
+  | "table_container"
+  | "table_header_row"
+
+export interface TableExtractColumnConfig {
+  index: number
+  name: string
+  source: ExtractSourceType
+  attribute?: string
+}
+
+export interface TableExtractConfig {
+  tableSelector: string
+  headerRowIndex: number
+  columns: TableExtractColumnConfig[]
+  maxRows?: number
+  pagination?: PaginationConfig
+}
 
 export type ErrorHandlingPolicy = "stop" | "skip"
 
@@ -54,6 +77,7 @@ export interface ExportedWorkflowFile {
   name?: string
   mode?: WorkflowMode
   domListConfig?: DomListConfig
+  tableExtractConfig?: TableExtractConfig
   executionOptions?: ExecutionOptions
   steps: WorkflowStep[]
 }
@@ -64,6 +88,7 @@ export interface SavedWorkflow {
   updatedAt: string
   mode?: WorkflowMode
   domListConfig?: DomListConfig
+  tableExtractConfig?: TableExtractConfig
   executionOptions?: ExecutionOptions
   steps: WorkflowStep[]
 }
@@ -78,6 +103,8 @@ export interface ExecutionState {
   currentPage?: number
   totalItemsInCurrentPage?: number
   detectedListCount?: number
+  detectedTableRowCount?: number
+  detectedTableColumnCount?: number
   skippedOrErrorCount?: number
   logs: string[]
   errorMessage?: string
@@ -122,10 +149,52 @@ export interface ClickNextPageResponse {
   message: string
 }
 
+export interface InspectTablePagePayload {
+  type: "INSPECT_TABLE_PAGE"
+  tableSelector: string
+  headerRowIndex: number
+}
+
+export interface InspectTablePageResponse {
+  ok: boolean
+  message: string
+  totalRows: number
+  dataRowCount: number
+  headers: string[]
+  pageSignature: string
+}
+
+export interface ExtractTableRowPayload {
+  type: "EXTRACT_TABLE_ROW"
+  tableSelector: string
+  headerRowIndex: number
+  dataRowIndex: number
+  columns: TableExtractColumnConfig[]
+}
+
+export interface ExtractTableRowResponse {
+  ok: boolean
+  message: string
+  rowData?: Record<string, string>
+}
+
+export interface PingPickerPayload {
+  type: "PING_PICKER"
+}
+
+export interface SyncPickingStatePayload {
+  type: "SYNC_PICKING_STATE"
+  executionState: ExecutionState
+}
+
 export type ContentScriptRequest =
   | ExecuteStepPayload
   | InspectListPagePayload
   | ClickNextPagePayload
+  | InspectTablePagePayload
+  | ExtractTableRowPayload
+  | PingPickerPayload
+  | SyncPickingStatePayload
 
 export type OrchestratorCommand =
   | { type: "START_WORKFLOW"; tabId?: number }
@@ -138,4 +207,10 @@ export type OrchestratorCommand =
       pickingTarget?: PickingTargetType
       tabId?: number
     }
-  | { type: "CANCEL_PICKING" }
+  | { type: "CANCEL_PICKING"; tabId?: number }
+  | {
+      type: "INSPECT_TABLE_IN_ACTIVE_TAB"
+      tableSelector: string
+      headerRowIndex: number
+      tabId?: number
+    }

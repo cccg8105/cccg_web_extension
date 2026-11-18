@@ -20,6 +20,16 @@ Plantilla para registrar una nueva versión completada al moverla desde backlog/
 | `[x]` | **F-XX** | Nombre de la funcionalidad | `types`, `contents`, `sidepanel` | [Ver F-XX](./features/completed/F-XX-nombre.md) |
 -->
 
+## [F-19] — Extracción Estructurada de Tablas HTML (`html_table_extract`)
+- **Estado:** `[x]` Completado
+- **Resumen:** Incorporación del tercer modo de automatización nativo (`html_table_extract`) con selección visual de elementos `<table>` y fila de cabecera (`<tr>` o índice 1-based), configuración individual por columna (`textContent`, `value` o `attribute` HTML como `href`/`src`), extracción automática de todas las filas posteriores a la cabecera con paginación multipágina y soporte completo en la biblioteca local e importación/exportación JSON (manteniendo `package.json` en `1.0.1` mientras `v1.1.0` sigue pendiente).
+
+| Estado | ID | Feature | Capas MV3 Modificadas | Especificación Archivada |
+| :---: | :--- | :--- | :--- | :--- |
+| `[x]` | **F-19** | Modo dedicado para extracción automática de tablas HTML con selección de fila de cabecera y configuración por columna | `types`, `storage`, `contents`, `background`, `sidepanel` | [Ver F-19](./features/completed/F-19-extraccion-tablas-html.md) |
+
+---
+
 ## [v1.0.1] — Estabilidad de Selectores en Listas Web y Refinamiento UX
 - **Estado:** `[x]` Completado
 - **Resumen:** Generación de selectores relativos generalizados en listas web descartando IDs únicos de producto y clases dinámicas (`jsx-*`), validación de cobertura multi-ítem en `PickerOverlay`, `scrollIntoView` previo sobre cada contenedor para activar *lazy-loading*, y ocultamiento contextual de la pestaña `Registros` y controles de formulario cuando se opera en modo `Extraer Lista Web`.

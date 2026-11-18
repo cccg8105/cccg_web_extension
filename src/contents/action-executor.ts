@@ -4,7 +4,11 @@ import type {
   ContentScriptRequest,
   DataRecord,
   ExecuteStepResponse,
+  ExtractTableRowPayload,
+  ExtractTableRowResponse,
   InspectListPageResponse,
+  InspectTablePageResponse,
+  TableExtractColumnConfig,
   WorkflowStep
 } from "~types/workflow"
 
@@ -539,13 +543,231 @@ async function handleClickNextPage(
   }
 }
 
-chrome.runtime.onMessage.addListener(
-  (message: ContentScriptRequest, _sender, sendResponse) => {
-    if (!message || typeof message.type !== "string") {
-      return false
-    }
+function getTableRows(tableEl: Element): HTMLTableRowElement[] {
+  if (tableEl instanceof HTMLTableElement) {
+    return Array.from(tableEl.rows)
+  }
+  const ownerTable = tableEl.closest("table")
+  return Array.from(tableEl.querySelectorAll("tr")).filter(
+    (tr): tr is HTMLTableRowElement =>
+      tr instanceof HTMLTableRowElement &&
+      (!ownerTable || tr.closest("table") === ownerTable)
+  )
+}
 
-    if (message.type === "EXECUTE_STEP") {
+function getRowCells(row: HTMLTableRowElement): HTMLTableCellElement[] {
+  return Array.from(row.cells)
+}
+
+function normalizeCellText(raw: string | null | undefined): string {
+  return (raw ?? "").replace(/\s+/g, " ").trim()
+}
+
+function buildUniqueHeaderNames(cells: Element[]): string[] {
+  const used = new Set<string>()
+  return cells.map((cell, index) => {
+    const base = normalizeCellText(cell.textContent) || `columna_${index + 1}`
+    let candidate = base
+    let suffix = 2
+    while (used.has(candidate)) {
+      candidate = `${base}_${suffix}`
+      suffix++
+    }
+    used.add(candidate)
+    return candidate
+  })
+}
+
+function extractCellValue(cell: Element, col: TableExtractColumnConfig): string {
+  if (col.source === "value") {
+    const control = cell.querySelector("input, select, textarea")
+    if (
+      control instanceof HTMLInputElement ||
+      control instanceof HTMLTextAreaElement ||
+      control instanceof HTMLSelectElement
+    ) {
+      return (control.value ?? "").trim()
+    }
+    if (
+      cell instanceof HTMLInputElement ||
+      cell instanceof HTMLTextAreaElement ||
+      cell instanceof HTMLSelectElement
+    ) {
+      return (cell.value ?? "").trim()
+    }
+    return (cell.getAttribute("value") ?? "").trim()
+  }
+
+  if (col.source === "attribute") {
+    const attrName = col.attribute?.trim() || "href"
+    const directAttr = cell.getAttribute(attrName)
+    if (directAttr !== null) {
+      return directAttr.trim()
+    }
+    const childWithAttr = Array.from(cell.querySelectorAll("*")).find((el) =>
+      el.hasAttribute(attrName)
+    )
+    return childWithAttr ? (childWithAttr.getAttribute(attrName) ?? "").trim() : ""
+  }
+
+  return normalizeCellText(cell.textContent)
+}
+
+async function handleInspectTablePage(
+  tableSelector: string,
+  headerRowIndex: number
+): Promise<InspectTablePageResponse> {
+  const trimmed = tableSelector.trim()
+  if (!trimmed) {
+    return {
+      ok: false,
+      message: "El selector CSS de la tabla está vacío.",
+      totalRows: 0,
+      dataRowCount: 0,
+      headers: [],
+      pageSignature: ""
+    }
+  }
+
+  let tableEl: Element
+  try {
+    tableEl = await waitForElement(trimmed, 8000)
+  } catch (err) {
+    return {
+      ok: false,
+      message: err instanceof Error ? err.message : String(err),
+      totalRows: 0,
+      dataRowCount: 0,
+      headers: [],
+      pageSignature: ""
+    }
+  }
+
+  const rows = getTableRows(tableEl)
+  if (rows.length === 0) {
+    return {
+      ok: false,
+      message: `La tabla "${trimmed}" no contiene filas (<tr>).`,
+      totalRows: 0,
+      dataRowCount: 0,
+      headers: [],
+      pageSignature: ""
+    }
+  }
+
+  const safeHeaderIndex = Math.max(1, Math.floor(headerRowIndex || 1))
+  if (safeHeaderIndex > rows.length) {
+    return {
+      ok: false,
+      message: `La fila de cabecera #${safeHeaderIndex} excede el total de filas de la tabla (${rows.length}).`,
+      totalRows: rows.length,
+      dataRowCount: 0,
+      headers: [],
+      pageSignature: ""
+    }
+  }
+
+  const headerRow = rows[safeHeaderIndex - 1]
+  const headers = buildUniqueHeaderNames(getRowCells(headerRow))
+  const dataRows = rows.slice(safeHeaderIndex)
+  const dataRowCount = dataRows.length
+
+  const firstDataSig = dataRows[0]
+    ? normalizeCellText(dataRows[0].textContent).slice(0, 80)
+    : ""
+  const lastDataSig =
+    dataRows.length > 1
+      ? normalizeCellText(dataRows[dataRows.length - 1].textContent).slice(0, 80)
+      : ""
+  const pageSignature = `${rows.length}::${firstDataSig}::${lastDataSig}`
+
+  return {
+    ok: true,
+    message: `Tabla detectada: ${headers.length} columnas y ${dataRowCount} filas de datos.`,
+    totalRows: rows.length,
+    dataRowCount,
+    headers,
+    pageSignature
+  }
+}
+
+async function handleExtractTableRow(
+  payload: ExtractTableRowPayload
+): Promise<ExtractTableRowResponse> {
+  const trimmed = payload.tableSelector.trim()
+  if (!trimmed) {
+    return {
+      ok: false,
+      message: "El selector CSS de la tabla está vacío."
+    }
+  }
+
+  let tableEl: Element
+  try {
+    tableEl = await waitForElement(trimmed, 8000)
+  } catch (err) {
+    return {
+      ok: false,
+      message: err instanceof Error ? err.message : String(err)
+    }
+  }
+
+  const rows = getTableRows(tableEl)
+  const safeHeaderIndex = Math.max(1, Math.floor(payload.headerRowIndex || 1))
+  const targetRowIndex = safeHeaderIndex + payload.dataRowIndex
+
+  if (targetRowIndex < safeHeaderIndex || targetRowIndex >= rows.length) {
+    return {
+      ok: false,
+      message: `Fila de datos #${payload.dataRowIndex + 1} fuera de rango (total filas tras cabecera: ${Math.max(0, rows.length - safeHeaderIndex)}).`
+    }
+  }
+
+  const row = rows[targetRowIndex]
+  row.scrollIntoView({
+    block: "center",
+    inline: "nearest",
+    behavior: "smooth"
+  })
+  flashElementHighlight(row)
+
+  const cells = getRowCells(row)
+  const activeColumns: TableExtractColumnConfig[] =
+    payload.columns.length > 0
+      ? payload.columns
+      : cells.map((_, index) => ({
+          index,
+          name: `columna_${index + 1}`,
+          source: "textContent"
+        }))
+
+  const rowData: Record<string, string> = {}
+  for (const col of activeColumns) {
+    const cell = cells[col.index]
+    const outKey = col.name.trim() || `columna_${col.index + 1}`
+    rowData[outKey] = cell ? extractCellValue(cell, col) : ""
+  }
+
+  return {
+    ok: true,
+    message: `Fila #${payload.dataRowIndex + 1} extraída (${Object.keys(rowData).length} columnas).`,
+    rowData
+  }
+}
+
+const actionExecutorGuardKey = `__autoloop_ae_${chrome.runtime?.id ?? "default"}`
+const globalRecord = globalThis as unknown as Record<string, boolean>
+
+if (!globalRecord[actionExecutorGuardKey]) {
+  globalRecord[actionExecutorGuardKey] = true
+
+  chrome.runtime.onMessage.addListener(
+    (message: ContentScriptRequest, _sender, sendResponse) => {
+      if (!chrome.runtime?.id || !message || typeof message.type !== "string") {
+        return false
+      }
+
+      if (message.type === "EXECUTE_STEP") {
       executeDomStep(
         message.step,
         message.record,
@@ -580,6 +802,38 @@ chrome.runtime.onMessage.addListener(
       return true
     }
 
+    if (message.type === "INSPECT_TABLE_PAGE") {
+      handleInspectTablePage(message.tableSelector, message.headerRowIndex)
+        .then((res) => sendResponse(res))
+        .catch((error: unknown) => {
+          const errorMsg =
+            error instanceof Error ? error.message : String(error)
+          sendResponse({
+            ok: false,
+            message: errorMsg,
+            totalRows: 0,
+            dataRowCount: 0,
+            headers: [],
+            pageSignature: ""
+          } satisfies InspectTablePageResponse)
+        })
+      return true
+    }
+
+    if (message.type === "EXTRACT_TABLE_ROW") {
+      handleExtractTableRow(message)
+        .then((res) => sendResponse(res))
+        .catch((error: unknown) => {
+          const errorMsg =
+            error instanceof Error ? error.message : String(error)
+          sendResponse({
+            ok: false,
+            message: errorMsg
+          } satisfies ExtractTableRowResponse)
+        })
+      return true
+    }
+
     if (message.type === "CLICK_NEXT_PAGE") {
       handleClickNextPage(message.nextButtonSelector)
         .then((res) => sendResponse(res))
@@ -595,6 +849,7 @@ chrome.runtime.onMessage.addListener(
       return true
     }
 
-    return false
-  }
-)
+      return false
+    }
+  )
+}

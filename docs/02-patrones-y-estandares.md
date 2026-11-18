@@ -39,6 +39,7 @@ export const workflowStorage = new Storage({
 export const STORAGE_KEYS = {
   WORKFLOW_MODE: "rpa_workflow_mode",
   DOM_LIST_CONFIG: "rpa_dom_list_config",
+  TABLE_EXTRACT_CONFIG: "rpa_table_extract_config",
   EXECUTION_OPTIONS: "rpa_execution_options",
   RECORDS: "rpa_records",
   STEPS: "rpa_steps",
@@ -125,8 +126,8 @@ export const getStyle = () => {
 }
 ```
 
-### Regla 4.2: Ignorar el propio overlay al inspeccionar el DOM
-Cuando se usa `document.elementFromPoint(event.clientX, event.clientY)`, se debe verificar siempre `isExtensionOverlayElement(target)` (`Boolean(el.closest("plasmo-csui"))`) para no seleccionar la barra flotante de la propia extensión.
+### Regla 4.2: Ignorar el propio overlay al inspeccionar el DOM (`getTargetPageElementAtPoint`)
+Para garantizar que el contenedor `<plasmo-csui>` (`#autoloop-picker-csui`) nunca bloquee el *hit-testing* de la página huésped, [`src/contents/picker-overlay.tsx`](../src/contents/picker-overlay.tsx) exporta `getShadowHostId` y `mountShadowHost` con `pointer-events: none !important; position: fixed !important; z-index: 2147483647 !important` y resuelve el elemento bajo el cursor mediante `getTargetPageElementAtPoint(event.clientX, event.clientY)` utilizando `document.elementsFromPoint(...)` y filtrando `isExtensionOverlayElement(candidate)`.
 
 ### Regla 4.3: Captura de eventos en fase `capture` (`true`)
 Durante el modo selección (`isPicking === true`), los listeners de `mousemove`, `click` y `keydown` se registran en `window` con `useCapture = true`:
@@ -153,8 +154,9 @@ Esto garantiza que el clic para capturar un selector no dispare la navegación d
    - El listener `chrome.runtime.onMessage` **siempre** retorna `true` (indicando respuesta asíncrona) y captura cualquier promesa rechazada en `.catch(...)`, devolviendo `{ ok: false, message: errorMsg } satisfies ExecuteStepResponse`.
    - Nunca dejes un camino de ejecución sin llamar a `sendResponse(...)`, ya que dejaría colgado el bucle del Service Worker.
 2. **En `src/background/tab-messenger.ts` y `src/background/runners/`:**
-   - `sendMessageToTabWithRetry` espera primero a `waitForTabComplete(tabId)` y realiza hasta **3 intentos** con una pausa de `500ms` entre ellos por si el Content Script se está reinicializando tras una navegación.
-   - Si después de los reintentos o de la ejecución el resultado es `ok: false`, el runner (`records-runner.ts` o `dom-list-runner.ts`) actualiza la fila con `applyStepErrorToResults` y aplica la política configurada en `ExecutionOptions.onError`:
+   - `ensureContentScriptsInTab(tabId)` envía un ping (`PING_PICKER`) a la pestaña activa y, si el Content Script no responde (por ejemplo, cuando la pestaña estaba abierta antes de cargar o recargar la extensión en `chrome://extensions/`), inyecta dinámicamente los archivos declarados en `manifest.content_scripts` mediante `chrome.scripting.executeScript`.
+   - `sendMessageToTabWithRetry` espera primero a `waitForTabComplete(tabId)`, invoca `ensureContentScriptsInTab(tabId)` si el primer intento falla y realiza hasta **3 intentos** con una pausa de `400ms` entre ellos.
+   - Si después de los reintentos o de la ejecución el resultado es `ok: false`, el runner (`records-runner.ts`, `dom-list-runner.ts` o `table-runner.ts`) actualiza la fila o registra el error y aplica la política configurada en `ExecutionOptions.onError`:
      - `"stop"`: transiciona `ExecutionState.status` a `"error"`, guarda el detalle en `errorMessage` y detiene el bucle.
      - `"skip"`: incrementa `skippedOrErrorCount`, registra la advertencia en `logs` mediante `appendLogEntry` y salta a la siguiente fila/ítem.
 

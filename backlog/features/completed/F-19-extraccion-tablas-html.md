@@ -2,7 +2,7 @@
 
 - **ID:** `F-19`
 - **Versión objetivo:** `v1.2.0`
-- **Estado:** `[ ] Pendiente`
+- **Estado:** `[x] Completado`
 - **Prioridad:** Alta
 - **Esfuerzo estimado:** L
 - **Playbook técnico relacionado:** [Playbook 2 (`OrchestratorCommand`) y Playbook 3 (`STORAGE_KEYS`)](../../docs/03-guia-extensibilidad.md)
@@ -59,7 +59,7 @@ Al activar este modo:
 
 ## 3. Impacto Técnico por Capa (Arquitectura MV3)
 
-- [ ] **Contratos y Tipos (`src/types/workflow.ts`):**
+- [x] **Contratos y Tipos (`src/types/workflow.ts`):**
   - Añadir `"html_table_extract"` a la unión `WorkflowMode`.
   - Añadir `"table_container"` y `"table_header_row"` a `PickingTargetType`.
   - Definir la interfaz `TableExtractColumnConfig`:
@@ -82,16 +82,16 @@ Al activar este modo:
     }
     ```
   - Extender `SavedWorkflow`, `ExportedWorkflowFile`, `ExecutionState`, `ExecuteStepPayload` y `InspectTablePageResponse`.
-- [ ] **Almacenamiento Persistente (`src/storage/workflow-storage.ts`):**
+- [x] **Almacenamiento Persistente (`src/storage/workflow-storage.ts`):**
   - Registrar `TABLE_EXTRACT_CONFIG: "rpa_table_extract_config"` en `STORAGE_KEYS`.
   - Declarar `DEFAULT_TABLE_EXTRACT_CONFIG`.
-- [ ] **Content Scripts (`src/contents/action-executor.ts` / `src/contents/picker-overlay.tsx`):**
+- [x] **Content Scripts (`src/contents/action-executor.ts` / `src/contents/picker-overlay.tsx`):**
   - En `picker-overlay.tsx`: reconocer elementos `<table>` o ancestros más cercanos al hacer hover; reconocer filas `<tr>` cuando el target es `table_header_row`.
   - En `action-executor.ts`: implementar manejador `INSPECT_TABLE_PAGE` que lea la cabecera, devuelva la lista de columnas y procese la matriz de celdas según `TableExtractColumnConfig`.
-- [ ] **Orquestador Background (`src/background/runners/`):**
+- [x] **Orquestador Background (`src/background/runners/`):**
   - Crear `src/background/runners/table-runner.ts` con la función `runHtmlTableExtraction(context)`.
   - Enrutar en `orchestrator.ts` según `workflowMode === "html_table_extract"`.
-- [ ] **Interfaz Side Panel (`src/sidepanel/`):**
+- [x] **Interfaz Side Panel (`src/sidepanel/`):**
   - Crear `src/sidepanel/components/TableExtractConfigCard.tsx`.
   - Actualizar `ModeSelectorBar.tsx` para incluir el tercer modo.
   - Actualizar `src/sidepanel/index.tsx` para ocultar la pestaña Datos en modo tabla.
@@ -101,16 +101,16 @@ Al activar este modo:
 
 ## 4. Criterios de Aceptación (Checklist de Verificación)
 
-- [ ] Se puede seleccionar el modo "Extraer Tabla HTML" desde la barra superior de la extensión.
-- [ ] El selector visual (Picker) permite elegir un elemento `<table>` resaltando su contorno y generando su selector CSS óptimo.
-- [ ] El usuario puede definir la fila de cabecera tanto ingresando su número (ej. fila 1, 2) como haciendo clic sobre el `<tr>` en la página con el Picker.
-- [ ] El sistema identifica correctamente todas las columnas de la fila elegida y permite editar sus nombres para el CSV.
-- [ ] Se puede configurar para cada columna individual si se extrae `textContent`, `value` o un atributo HTML (`href`, `src`, etc.).
-- [ ] El motor extrae fielmente todas las filas posteriores a la cabecera, descartando las filas previas.
-- [ ] La paginación automática navega entre páginas haciendo clic en el botón siguiente y acumula los registros en un solo reporte CSV.
-- [ ] Los flujos configurados con modo tabla se pueden guardar en la biblioteca local y exportar/importar en archivos `.json`.
-- [ ] Cumple con la paleta de colores y patrones de `docs/02-patrones-y-estandares.md`.
-- [ ] Compila sin errores en TypeScript (`npx tsc --noEmit`) y empaqueta limpiamente con `npm run build`.
-- [ ] Documentación técnica (`README.md`, `docs/`) actualizada tras completar la implementación.
-- [ ] Grafo de conocimiento sincronizado con `graphify update .`.
+- [x] Se puede seleccionar el modo "Extraer Tabla HTML" desde la barra superior de la extensión.
+- [x] El selector visual (Picker) permite elegir un elemento `<table>` resaltando su contorno y generando su selector CSS óptimo.
+- [x] El usuario puede definir la fila de cabecera tanto ingresando su número (ej. fila 1, 2) como haciendo clic sobre el `<tr>` en la página con el Picker.
+- [x] El sistema identifica correctamente todas las columnas de la fila elegida y permite editar sus nombres para el CSV.
+- [x] Se puede configurar para cada columna individual si se extrae `textContent`, `value` o un atributo HTML (`href`, `src`, etc.).
+- [x] El motor extrae fielmente todas las filas posteriores a la cabecera, descartando las filas previas.
+- [x] La paginación automática navega entre páginas haciendo clic en el botón siguiente y acumula los registros en un solo reporte CSV.
+- [x] Los flujos configurados con modo tabla se pueden guardar en la biblioteca local y exportar/importar en archivos `.json`.
+- [x] Cumple con la paleta de colores y patrones de `docs/02-patrones-y-estandares.md`.
+- [x] Compila sin errores en TypeScript (`npx tsc --noEmit`) y empaqueta limpiamente con `npm run build`.
+- [x] Documentación técnica (`README.md`, `docs/`) actualizada tras completar la implementación.
+- [x] Grafo de conocimiento sincronizado con `graphify update .`.
 
