@@ -69,6 +69,7 @@ export interface WorkflowStep {
   outputColumn?: string
   extractSource?: ExtractSourceType
   extractAttribute?: string
+  optional?: boolean
 }
 
 export interface ExportedWorkflowFile {
@@ -124,6 +125,7 @@ export interface ExecuteStepResponse {
   ok: boolean
   message: string
   extractedValue?: string
+  skippedStep?: boolean
 }
 
 export interface InspectListPagePayload {

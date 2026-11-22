@@ -144,11 +144,20 @@ function setNativeValue(
   element.dispatchEvent(new Event("change", { bubbles: true }))
 }
 
+const OPTIONAL_STEP_TIMEOUT_MS = 800
+
+function isElementNotFoundTimeout(err: unknown): boolean {
+  return (
+    err instanceof Error && err.message.startsWith("Tiempo de espera agotado")
+  )
+}
+
 async function resolveStepTargetElement(
   step: WorkflowStep,
   listItemSelector: string | undefined,
   recordIndex: number
-): Promise<HTMLElement> {
+): Promise<HTMLElement | null> {
+  const isOptional = Boolean(step.optional)
   const trimmedListSelector = listItemSelector?.trim()
   if (trimmedListSelector) {
     await waitForElement(trimmedListSelector, 8000)
@@ -172,8 +181,20 @@ async function resolveStepTargetElement(
       return container
     }
 
-    const scopedEl = await waitForScopedElement(container, subSelector, 4500)
-    return scopedEl as HTMLElement
+    const scopedTimeout = isOptional ? OPTIONAL_STEP_TIMEOUT_MS : 4500
+    try {
+      const scopedEl = await waitForScopedElement(
+        container,
+        subSelector,
+        scopedTimeout
+      )
+      return scopedEl as HTMLElement
+    } catch (err) {
+      if (isOptional && isElementNotFoundTimeout(err)) {
+        return null
+      }
+      throw err
+    }
   }
 
   if (!step.selector || !step.selector.trim()) {
@@ -182,8 +203,16 @@ async function resolveStepTargetElement(
     )
   }
 
-  const rawElement = await waitForElement(step.selector.trim())
-  return rawElement as HTMLElement
+  const globalTimeout = isOptional ? OPTIONAL_STEP_TIMEOUT_MS : 8000
+  try {
+    const rawElement = await waitForElement(step.selector.trim(), globalTimeout)
+    return rawElement as HTMLElement
+  } catch (err) {
+    if (isOptional && isElementNotFoundTimeout(err)) {
+      return null
+    }
+    throw err
+  }
 }
 
 async function executeDomStep(
@@ -213,6 +242,15 @@ async function executeDomStep(
     listItemSelector,
     recordIndex
   )
+
+  if (!element) {
+    return {
+      ok: true,
+      skippedStep: true,
+      extractedValue: step.type === "extract" ? "" : undefined,
+      message: "Paso opcional omitido (elemento no presente)"
+    }
+  }
 
   element.scrollIntoView({
     block: "center",

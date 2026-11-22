@@ -93,6 +93,11 @@ export function StepCard({
             className={`px-1.5 py-0.5 rounded text-[9px] font-bold border shrink-0 ${badge.className}`}>
             {badge.text}
           </span>
+          {step.type !== "wait" && step.optional && (
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-medium border border-amber-500/30 bg-amber-950/30 text-amber-300 shrink-0">
+              Opcional
+            </span>
+          )}
           <input
             type="text"
             disabled={isRunning}
@@ -173,6 +178,18 @@ export function StepCard({
               {isPickingThis ? "Cancelar" : "Elegir"}
             </button>
           </div>
+          <label className="flex items-center gap-2 pt-0.5 text-[11px] text-ash cursor-pointer select-none">
+            <input
+              type="checkbox"
+              disabled={isRunning}
+              checked={Boolean(step.optional)}
+              onChange={(e) =>
+                onUpdate(step.id, { optional: e.target.checked })
+              }
+              className="rounded border-rim bg-void-black text-coral-shimmer focus:ring-0 disabled:opacity-60"
+            />
+            <span>Paso opcional (omitir sin error si el elemento no existe)</span>
+          </label>
         </div>
       )}
 

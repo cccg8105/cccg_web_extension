@@ -20,6 +20,16 @@ Plantilla para registrar una nueva versión completada al moverla desde backlog/
 | `[x]` | **F-XX** | Nombre de la funcionalidad | `types`, `contents`, `sidepanel` | [Ver F-XX](./features/completed/F-XX-nombre.md) |
 -->
 
+## [F-11] — Condicionales Simples por Paso (`optional`)
+- **Estado:** `[x]` Completado
+- **Resumen:** Soporte para marcar cualquier paso DOM (`click`, `input`, `select`, `keypress`, `extract`) como opcional (`WorkflowStep.optional`). En `src/contents/action-executor.ts`, los pasos opcionales verifican el elemento con un timeout reducido (`800ms`) y, si no está presente, se omiten devolviendo `{ ok: true, skippedStep: true, extractedValue: "" }` sin detener la fila/ítem ni marcar error en `StepCard.tsx` / `workflow-io.ts` (manteniendo `package.json` en `1.0.1` hasta completar `v1.1.0`).
+
+| Estado | ID | Feature | Capas MV3 Modificadas | Especificación Archivada |
+| :---: | :--- | :--- | :--- | :--- |
+| `[x]` | **F-11** | Condicionales simples por paso (*Ejecutar paso solo si el selector existe / Paso opcional*) | `types`, `contents`, `sidepanel` | [Ver F-11](./features/completed/F-11-condicionales-simples-por-paso.md) |
+
+---
+
 ## [F-19] — Extracción Estructurada de Tablas HTML (`html_table_extract`)
 - **Estado:** `[x]` Completado
 - **Resumen:** Incorporación del tercer modo de automatización nativo (`html_table_extract`) con selección visual de elementos `<table>` y fila de cabecera (`<tr>` o índice 1-based), configuración individual por columna (`textContent`, `value` o `attribute` HTML como `href`/`src`), extracción automática de todas las filas posteriores a la cabecera con paginación multipágina y soporte completo en la biblioteca local e importación/exportación JSON (manteniendo `package.json` en `1.0.1` mientras `v1.1.0` sigue pendiente).

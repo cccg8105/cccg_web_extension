@@ -2,7 +2,7 @@
 
 - **ID:** `F-11`
 - **Versión objetivo:** `v1.1.0`
-- **Estado:** `[ ] Pendiente`
+- **Estado:** `[x] Completado`
 - **Prioridad:** Media-Alta
 - **Esfuerzo estimado:** M
 - **Playbook técnico relacionado:** [Playbook 1 (`WorkflowStep`)](../../docs/03-guia-extensibilidad.md)
@@ -32,22 +32,22 @@ Esta funcionalidad permite marcar cualquier paso DOM como **Opcional / Condicion
 
 ## 3. Impacto Técnico por Capa (Arquitectura MV3)
 
-- [ ] **Contratos y Tipos (`src/types/workflow.ts`):**
+- [x] **Contratos y Tipos (`src/types/workflow.ts`):**
   - Añadir `optional?: boolean` en `WorkflowStep`.
   - Añadir `skippedStep?: boolean` en `ExecuteStepResponse`.
-- [ ] **Content Scripts (`src/contents/action-executor.ts`):**
+- [x] **Content Scripts (`src/contents/action-executor.ts`):**
   - En `resolveStepTargetElement` / `executeDomStep`: si `step.optional` es `true`, usar un timeout reducido (`800ms`) y, en caso de no encontrar el elemento, resolver sin lanzar error devolviendo `ok: true, skippedStep: true, extractedValue: ""`.
-- [ ] **Interfaz Side Panel (`src/sidepanel/components/StepCard.tsx` y `src/sidepanel/utils/workflow-io.ts`):**
+- [x] **Interfaz Side Panel (`src/sidepanel/components/StepCard.tsx` y `src/sidepanel/utils/workflow-io.ts`):**
   - Agregar el control `optional` en `StepCard.tsx` y preservarlo en `workflow-io.ts`.
 
 ---
 
 ## 4. Criterios de Aceptación (Checklist de Verificación)
 
-- [ ] El usuario puede marcar o desmarcar cualquier paso DOM como **Opcional** desde su tarjeta en la pestaña **Pasos**.
-- [ ] Cuando un paso marcado como opcional no encuentra su elemento en la página o dentro del ítem de la lista, no genera error ni detiene los demás pasos de ese mismo ítem.
-- [ ] En pasos `extract` opcionales, si el elemento no existe, la columna de salida se guarda con valor vacío `""` y los demás campos del ítem se conservan.
-- [ ] Cumple con los estándares de `docs/02-patrones-y-estandares.md`.
-- [ ] Documentación técnica (`README.md` y `docs/`) actualizada si cambiaron módulos, flujos o playbooks.
-- [ ] Compila sin errores de TypeScript (`npm run build`).
-- [ ] Grafo de conocimiento actualizado con `graphify update .` tras finalizar la implementación.
+- [x] El usuario puede marcar o desmarcar cualquier paso DOM como **Opcional** desde su tarjeta en la pestaña **Pasos**.
+- [x] Cuando un paso marcado como opcional no encuentra su elemento en la página o dentro del ítem de la lista, no genera error ni detiene los demás pasos de ese mismo ítem.
+- [x] En pasos `extract` opcionales, si el elemento no existe, la columna de salida se guarda con valor vacío `""` y los demás campos del ítem se conservan.
+- [x] Cumple con los estándares de `docs/02-patrones-y-estandares.md`.
+- [x] Documentación técnica (`README.md` y `docs/`) actualizada si cambiaron módulos, flujos o playbooks.
+- [x] Compila sin errores de TypeScript (`npm run build`).
+- [x] Grafo de conocimiento actualizado con `graphify update .` tras finalizar la implementación.

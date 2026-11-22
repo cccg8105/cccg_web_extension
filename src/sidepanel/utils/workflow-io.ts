@@ -263,7 +263,8 @@ export function parseAndValidateWorkflowJson(
         extractAttribute:
           typeof item.extractAttribute === "string"
             ? item.extractAttribute
-            : undefined
+            : undefined,
+        optional: typeof item.optional === "boolean" ? item.optional : undefined
       })
     }
 

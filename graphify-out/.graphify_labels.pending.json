@@ -4,7 +4,7 @@
   "5": "workflow-io.ts",
   "7": "StepsTab.tsx",
   "8": "WorkflowMode",
-  "9": "workflow.ts",
-  "10": "WorkflowLibraryCard.tsx",
+  "9": "index.tsx",
+  "10": "RunTab.tsx",
   "11": "clean-manifest.js"
 }

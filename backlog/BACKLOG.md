@@ -24,7 +24,6 @@
 | Orden | Estado | ID | Feature | Prioridad | Esfuerzo | Capas MV3 Afectadas | Especificación |
 | :---: | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
 | **1** | `[ ]` | **F-18** | Motor de Selectores Autocurativos con Aprendizaje por Refuerzo (*Multi-Armed Bandit UCB1 + $Q$-Learning*) | **Alta** | L | `types`, `contents`, `background`, `sidepanel` | [Ver F-18](./features/F-18-selectores-autocurativos-rl.md) |
-| **2** | `[ ]` | **F-11** | Condicionales simples por paso (*Ejecutar paso solo si el selector existe / Paso opcional*) | **Media-Alta** | M | `types`, `contents`, `sidepanel` | [Ver F-11](./features/F-11-condicionales-simples-por-paso.md) |
 
 ---
 
