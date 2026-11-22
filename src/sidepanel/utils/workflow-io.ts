@@ -3,16 +3,27 @@ import type {
   ActionType,
   DataRecord,
   DomListConfig,
+  ElementFingerprint,
   ErrorHandlingPolicy,
   ExecutionOptions,
   ExportedWorkflowFile,
   ExtractSourceType,
   PaginationConfig,
+  SelectorCandidate,
   TableExtractColumnConfig,
   TableExtractConfig,
+  TextPatternType,
   WorkflowMode,
   WorkflowStep
 } from "~types/workflow"
+
+const VALID_TEXT_PATTERNS: TextPatternType[] = [
+  "currency",
+  "number",
+  "url",
+  "text",
+  "empty"
+]
 
 const VALID_ACTION_TYPES: ActionType[] = [
   "click",
@@ -170,6 +181,93 @@ function sanitizeExecutionOptions(
   }
 }
 
+function sanitizeStringArray(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  return raw.filter((item): item is string => typeof item === "string")
+}
+
+function sanitizeSelectorCandidates(
+  raw: unknown
+): SelectorCandidate[] | undefined {
+  if (!Array.isArray(raw)) return undefined
+  const out: SelectorCandidate[] = []
+
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue
+    const obj = item as Record<string, unknown>
+    if (typeof obj.selector !== "string" || !obj.selector.trim()) continue
+
+    const qValue =
+      typeof obj.qValue === "number" && Number.isFinite(obj.qValue)
+        ? Math.max(-1, Math.min(1, obj.qValue))
+        : 0.5
+    const successCount =
+      typeof obj.successCount === "number" && obj.successCount >= 0
+        ? Math.floor(obj.successCount)
+        : 0
+    const failCount =
+      typeof obj.failCount === "number" && obj.failCount >= 0
+        ? Math.floor(obj.failCount)
+        : 0
+    const source: "initial" | "healed" =
+      obj.source === "healed" ? "healed" : "initial"
+
+    out.push({
+      selector: obj.selector.trim(),
+      qValue,
+      successCount,
+      failCount,
+      source
+    })
+  }
+
+  return out.length > 0 ? out : undefined
+}
+
+function sanitizeElementFingerprint(
+  raw: unknown
+): ElementFingerprint | undefined {
+  if (!raw || typeof raw !== "object") return undefined
+  const obj = raw as Record<string, unknown>
+  if (typeof obj.tagName !== "string" || !obj.tagName.trim()) {
+    return undefined
+  }
+
+  const textPattern: TextPatternType =
+    typeof obj.textPattern === "string" &&
+    VALID_TEXT_PATTERNS.includes(obj.textPattern as TextPatternType)
+      ? (obj.textPattern as TextPatternType)
+      : "text"
+
+  let relativeBox: ElementFingerprint["relativeBox"]
+  if (obj.relativeBox && typeof obj.relativeBox === "object") {
+    const box = obj.relativeBox as Record<string, unknown>
+    if (
+      typeof box.topRatio === "number" &&
+      Number.isFinite(box.topRatio) &&
+      typeof box.leftRatio === "number" &&
+      Number.isFinite(box.leftRatio)
+    ) {
+      relativeBox = {
+        topRatio: Math.max(0, Math.min(1, box.topRatio)),
+        leftRatio: Math.max(0, Math.min(1, box.leftRatio))
+      }
+    }
+  }
+
+  return {
+    tagName: obj.tagName.trim().toLowerCase(),
+    stableClasses: sanitizeStringArray(obj.stableClasses),
+    parentClasses: sanitizeStringArray(obj.parentClasses),
+    attributeNames: sanitizeStringArray(obj.attributeNames),
+    textPattern,
+    ...(typeof obj.roleHint === "string" && obj.roleHint.trim()
+      ? { roleHint: obj.roleHint.trim().toLowerCase() }
+      : {}),
+    ...(relativeBox ? { relativeBox } : {})
+  }
+}
+
 export function parseAndValidateWorkflowJson(
   rawText: string
 ): WorkflowImportValidationResult {
@@ -243,6 +341,8 @@ export function parseAndValidateWorkflowJson(
         label: item.label,
         selector:
           typeof item.selector === "string" ? item.selector : undefined,
+        selectorCandidates: sanitizeSelectorCandidates(item.selectorCandidates),
+        targetFingerprint: sanitizeElementFingerprint(item.targetFingerprint),
         valueTemplate:
           typeof item.valueTemplate === "string"
             ? item.valueTemplate

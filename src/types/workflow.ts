@@ -58,11 +58,38 @@ export interface DomListConfig {
   pagination?: PaginationConfig
 }
 
+export type TextPatternType = "currency" | "number" | "url" | "text" | "empty"
+
+export interface ElementFingerprint {
+  tagName: string
+  stableClasses: string[]
+  parentClasses: string[]
+  attributeNames: string[]
+  textPattern: TextPatternType
+  roleHint?: string
+  relativeBox?: {
+    topRatio: number
+    leftRatio: number
+  }
+}
+
+export interface SelectorCandidate {
+  selector: string
+  qValue: number
+  successCount: number
+  failCount: number
+  source: "initial" | "healed"
+}
+
 export interface WorkflowStep {
   id: string
   type: ActionType
   label: string
   selector?: string
+  /** Pool de selectores candidatos gestionado por Aprendizaje por Refuerzo */
+  selectorCandidates?: SelectorCandidate[]
+  /** Huella estructural y semántica del componente objetivo para autocuración */
+  targetFingerprint?: ElementFingerprint
   valueTemplate?: string
   waitMs?: number
   key?: string
@@ -124,6 +151,16 @@ export interface ExecuteStepResponse {
   ok: boolean
   message: string
   extractedValue?: string
+  /** Candidatos actualizados por Q-Learning o nueva síntesis autocurativa */
+  updatedCandidates?: SelectorCandidate[]
+  /** Selector sintetizado cuando se activó Self-Healing */
+  healedSelector?: string
+  /** Similitud estimada (0..1) del nodo recuperado por Self-Healing */
+  healedSimilarity?: number
+  /** Selector efectivo utilizado finalmente para resolver el elemento */
+  activeSelectorUsed?: string
+  /** Huella inicial generada en tiempo de ejecución para pasos sin fingerprint previo */
+  bootstrappedFingerprint?: ElementFingerprint
 }
 
 export interface InspectListPagePayload {

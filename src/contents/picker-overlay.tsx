@@ -1,8 +1,18 @@
-import { finder } from "@medv/finder"
 import cssText from "data-text:~style.css"
 import type { PlasmoCSConfig } from "plasmo"
 import { useEffect, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
+import {
+  buildElementTagAndClassSelector,
+  computeSafeSelector,
+  generateCandidateSelectors,
+  getStableClasses,
+  isExtensionOverlayElement
+} from "~contents/helpers/dom-selectors"
+import {
+  buildElementFingerprint,
+  buildInitialSelectorCandidates
+} from "~contents/helpers/selector-rl-engine"
 import {
   DEFAULT_DOM_LIST_CONFIG,
   DEFAULT_EXECUTION_STATE,
@@ -16,6 +26,7 @@ import type {
   ContentScriptRequest,
   DomListConfig,
   ExecutionState,
+  SelectorCandidate,
   TableExtractColumnConfig,
   TableExtractConfig,
   WorkflowMode,
@@ -110,30 +121,6 @@ function extractHeadersFromRow(
   })
 }
 
-function isStableClassName(cls: string): boolean {
-  if (!cls || cls.length <= 1) return false
-  if (/^[0-9]/.test(cls)) return false
-  if (cls.includes(":") || cls.includes("[") || cls.includes("]")) return false
-  // Styled-JSX / CSS-in-JS dynamic classes
-  if (/^jsx-\d+$/i.test(cls)) return false
-  if (/^css-[a-z0-9]{5,}$/i.test(cls)) return false
-  if (/^sc-[a-z0-9]{5,}$/i.test(cls)) return false
-  return true
-}
-
-function getStableClasses(el: Element): string[] {
-  return Array.from(el.classList).filter(isStableClassName)
-}
-
-function buildElementTagAndClassSelector(el: Element): string {
-  const tag = el.tagName.toLowerCase()
-  const classes = getStableClasses(el).slice(0, 2)
-  if (classes.length === 0) {
-    return tag
-  }
-  return `${tag}.${classes.map((c) => CSS.escape(c)).join(".")}`
-}
-
 function inferStepNameAndColumn(target: Element): {
   labelSuffix: string
   columnName: string
@@ -152,17 +139,16 @@ function inferStepNameAndColumn(target: Element): {
 }
 
 function countMatchingListContainers(
-  itemSelector: string,
+  containers: Element[],
   relativeSelector: string
 ): { matched: number; total: number } {
-  try {
-    const containers = Array.from(document.querySelectorAll(itemSelector))
-    const total = containers.length
-    if (total === 0) return { matched: 0, total: 0 }
-    if (!relativeSelector || relativeSelector === ":scope") {
-      return { matched: total, total }
-    }
+  const total = containers.length
+  if (total === 0) return { matched: 0, total: 0 }
+  if (!relativeSelector || relativeSelector === ":scope") {
+    return { matched: total, total }
+  }
 
+  try {
     let matched = 0
     for (const container of containers) {
       if (container.querySelector(relativeSelector)) {
@@ -171,102 +157,86 @@ function countMatchingListContainers(
     }
     return { matched, total }
   } catch {
-    return { matched: 0, total: 0 }
+    return { matched: 0, total }
   }
-}
-
-function extractStableIdPrefix(rawId: string): string | null {
-  if (!rawId) return null
-  const match = rawId.match(/^([a-zA-Z][a-zA-Z0-9_-]*?[-_])(?:\d|https?:)/i)
-  if (match && match[1] && match[1].length >= 4) {
-    return match[1]
-  }
-  return null
-}
-
-function buildStructuralRelativePath(el: Element, itemRoot: Element): string {
-  const segments: string[] = []
-  let current: Element | null = el
-
-  while (current && current !== itemRoot && segments.length < 4) {
-    segments.unshift(buildElementTagAndClassSelector(current))
-    current = current.parentElement
-  }
-
-  return segments.join(" > ") || el.tagName.toLowerCase()
 }
 
 function computeRelativeListItemSelector(
   el: Element,
   itemRoot: Element,
-  itemSelector: string
-): { selector: string; matched: number; total: number } {
-  const baseTotal = countMatchingListContainers(itemSelector, ":scope").total
+  itemSelector: string,
+  collectPool = false
+): {
+  selector: string
+  matched: number
+  total: number
+  initialCandidates?: SelectorCandidate[]
+} {
+  let containers: Element[] = []
+  try {
+    containers = Array.from(document.querySelectorAll(itemSelector))
+  } catch {
+    containers = []
+  }
+  const baseTotal = containers.length
 
   if (el === itemRoot) {
-    return { selector: ":scope", matched: baseTotal, total: baseTotal }
-  }
-
-  const candidates: string[] = []
-
-  try {
-    const finderRelative = finder(el, {
-      root: itemRoot,
-      idName: () => false,
-      className: isStableClassName,
-      timeoutMs: 400
-    })
-    if (finderRelative && !finderRelative.includes("#")) {
-      candidates.push(finderRelative)
+    return {
+      selector: ":scope",
+      matched: baseTotal,
+      total: baseTotal,
+      initialCandidates: collectPool
+        ? buildInitialSelectorCandidates([
+            { selector: ":scope", matched: baseTotal, total: baseTotal }
+          ])
+        : undefined
     }
-  } catch {
-    // Continúa con candidatos alternativos
   }
 
-  const idPrefix = extractStableIdPrefix(el.id)
-  if (idPrefix) {
-    const escapedPrefix = idPrefix.replace(/"/g, '\\"')
-    candidates.push(`${el.tagName.toLowerCase()}[id^="${escapedPrefix}"]`)
-  }
-
-  const dataTestId =
-    el.getAttribute("data-testid") || el.getAttribute("data-test-id")
-  if (dataTestId && !/\d{4,}/.test(dataTestId)) {
-    const escapedTestId = dataTestId.replace(/"/g, '\\"')
-    candidates.push(
-      `${el.tagName.toLowerCase()}[data-testid="${escapedTestId}"]`
-    )
-  }
-
-  const tagAndClass = buildElementTagAndClassSelector(el)
-  if (tagAndClass.includes(".")) {
-    candidates.push(tagAndClass)
-  }
-
-  const structuralPath = buildStructuralRelativePath(el, itemRoot)
-  candidates.push(structuralPath)
-
-  candidates.push(el.tagName.toLowerCase())
+  const candidates = generateCandidateSelectors(el, itemRoot)
 
   let bestSelector = candidates[0] ?? el.tagName.toLowerCase()
-  let bestMatched = 0
+  let bestMatched = -1
+  let bestRawCount = 0
+  const scoredEntries: Array<{
+    selector: string
+    matched: number
+    total: number
+    score: number
+    isSpecific: boolean
+  }> = []
 
   for (const candidate of candidates) {
     try {
       const firstMatchInCurrentItem = itemRoot.querySelector(candidate)
       if (!firstMatchInCurrentItem) continue
 
-      const { matched } = countMatchingListContainers(itemSelector, candidate)
+      const { matched } = countMatchingListContainers(containers, candidate)
       const isExactTarget = firstMatchInCurrentItem === el
-      const effectiveScore = isExactTarget ? matched + 0.5 : matched
+      const isSpecific = /[.#\[:>]/.test(candidate)
+      const effectiveScore =
+        (isSpecific ? baseTotal + 10 : 0) +
+        matched +
+        (isExactTarget ? 0.5 : 0)
+
+      scoredEntries.push({
+        selector: candidate,
+        matched,
+        total: baseTotal,
+        score: effectiveScore,
+        isSpecific
+      })
 
       if (effectiveScore > bestMatched) {
         bestMatched = effectiveScore
+        bestRawCount = matched
         bestSelector = candidate
       }
 
       if (
+        !collectPool &&
         isExactTarget &&
+        isSpecific &&
         baseTotal > 1 &&
         matched >= Math.ceil(baseTotal * 0.8)
       ) {
@@ -277,11 +247,35 @@ function computeRelativeListItemSelector(
     }
   }
 
-  const finalStats = countMatchingListContainers(itemSelector, bestSelector)
+  if (scoredEntries.length === 0) {
+    const fallbackStats = countMatchingListContainers(containers, bestSelector)
+    bestRawCount = fallbackStats.matched
+  }
+
+  const hasSpecificMatches = scoredEntries.some((entry) => entry.isSpecific)
+  const poolSource = (
+    hasSpecificMatches
+      ? scoredEntries.filter((entry) => entry.isSpecific)
+      : scoredEntries
+  )
+    .sort((a, b) => b.score - a.score)
+    .map((item) => ({
+      selector: item.selector,
+      matched: item.matched,
+      total: item.total
+    }))
+
   return {
     selector: bestSelector,
-    matched: finalStats.matched,
-    total: finalStats.total
+    matched: bestRawCount,
+    total: baseTotal,
+    initialCandidates: collectPool
+      ? buildInitialSelectorCandidates(
+          poolSource.length > 0
+            ? poolSource
+            : [{ selector: bestSelector, matched: bestRawCount, total: baseTotal }]
+        )
+      : undefined
   }
 }
 
@@ -307,20 +301,8 @@ function computeRepeatingListSelector(target: Element): {
 
     if (sameTagSiblings.length >= 2) {
       const itemPart = buildElementTagAndClassSelector(candidate)
-      let parentSelector = ""
-      if (parent === document.body) {
-        parentSelector = "body"
-      } else {
-        try {
-          parentSelector = finder(parent, {
-            root: document.body,
-            className: isStableClassName,
-            timeoutMs: 300
-          })
-        } catch {
-          parentSelector = buildElementTagAndClassSelector(parent)
-        }
-      }
+      const parentSelector =
+        parent === document.body ? "body" : computeSafeSelector(parent)
 
       const scopedCandidateSelector = `${parentSelector} > ${itemPart}`
       try {
@@ -370,52 +352,6 @@ function computeRepeatingListSelector(target: Element): {
       count: document.querySelectorAll(tag).length
     }
   }
-}
-
-function computeSafeSelector(el: Element, rootEl?: Element): string {
-  const effectiveRoot = rootEl ?? document.body
-  if (el === document.body && !rootEl) {
-    return "body"
-  }
-
-  try {
-    if (effectiveRoot && effectiveRoot.contains(el)) {
-      return finder(el, {
-        root: effectiveRoot,
-        className: isStableClassName,
-        timeoutMs: 400
-      })
-    }
-  } catch {
-    // Fallback below
-  }
-
-  if (el.id && !rootEl) {
-    return `#${CSS.escape(el.id)}`
-  }
-  return buildElementTagAndClassSelector(el)
-}
-
-function isExtensionOverlayElement(el: Element | null): boolean {
-  if (!el) return true
-  if (el === document.documentElement) return true
-  const tagName = el.tagName?.toLowerCase()
-  if (tagName === "plasmo-csui") return true
-  if (
-    typeof el.closest === "function" &&
-    (el.closest("plasmo-csui") || el.closest("#autoloop-picker-csui"))
-  ) {
-    return true
-  }
-  if (
-    el.id === "autoloop-picker-csui" ||
-    el.id === "plasmo-shadow-container" ||
-    el.id === "rpa-picker-overlay-root" ||
-    el.id === "__plasmo-loading__"
-  ) {
-    return true
-  }
-  return false
 }
 
 function getTargetPageElementAtPoint(
@@ -561,8 +497,15 @@ const PickerOverlay = () => {
     const computeStepSelectorWithCoverage = (
       el: Element,
       overrideMode?: WorkflowMode,
-      overrideDomConfig?: DomListConfig
-    ): { selector: string; matched?: number; total?: number } => {
+      overrideDomConfig?: DomListConfig,
+      collectPool = false
+    ): {
+      selector: string
+      matched?: number
+      total?: number
+      itemRoot?: Element
+      initialCandidates?: SelectorCandidate[]
+    } => {
       const activeMode = overrideMode ?? workflowMode
       const configuredItemSelector = (
         overrideDomConfig ?? domListConfig
@@ -571,17 +514,29 @@ const PickerOverlay = () => {
         try {
           const itemRoot = el.closest(configuredItemSelector)
           if (itemRoot) {
-            return computeRelativeListItemSelector(
-              el,
-              itemRoot,
-              configuredItemSelector
-            )
+            return {
+              ...computeRelativeListItemSelector(
+                el,
+                itemRoot,
+                configuredItemSelector,
+                collectPool
+              ),
+              itemRoot
+            }
           }
         } catch {
           // Invalid itemSelector, fallback to document selector
         }
       }
-      return { selector: computeSafeSelector(el) }
+      const primarySelector = computeSafeSelector(el)
+      return {
+        selector: primarySelector,
+        initialCandidates: collectPool
+          ? buildInitialSelectorCandidates(
+              generateCandidateSelectors(el).map((sel) => ({ selector: sel }))
+            )
+          : undefined
+      }
     }
 
     const cleanupInvalidatedContext = () => {
@@ -927,7 +882,8 @@ const PickerOverlay = () => {
         const stepSelInfo = computeStepSelectorWithCoverage(
           target,
           latestWorkflowMode,
-          latestDomConfig
+          latestDomConfig,
+          true
         )
         const selector = stepSelInfo.selector
         const targetStepId =
@@ -943,6 +899,17 @@ const PickerOverlay = () => {
           const updatedSteps = latestSteps.map((step) => {
             if (step.id !== targetStepId) return step
 
+            const targetFingerprint = buildElementFingerprint(
+              target,
+              stepSelInfo.itemRoot,
+              step
+            )
+            const selectorCandidates =
+              stepSelInfo.initialCandidates &&
+              stepSelInfo.initialCandidates.length > 0
+                ? stepSelInfo.initialCandidates
+                : buildInitialSelectorCandidates([{ selector }])
+
             if (step.type === "extract") {
               const hasDefaultColumn =
                 !step.outputColumn?.trim() ||
@@ -954,6 +921,8 @@ const PickerOverlay = () => {
               return {
                 ...step,
                 selector,
+                selectorCandidates,
+                targetFingerprint,
                 outputColumn: hasDefaultColumn
                   ? inferred.columnName
                   : step.outputColumn,
@@ -963,7 +932,12 @@ const PickerOverlay = () => {
               }
             }
 
-            return { ...step, selector }
+            return {
+              ...step,
+              selector,
+              selectorCandidates,
+              targetFingerprint
+            }
           })
           await setSteps(updatedSteps)
         }

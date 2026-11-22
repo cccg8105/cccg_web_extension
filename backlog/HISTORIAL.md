@@ -20,6 +20,16 @@ Plantilla para registrar una nueva versión completada al moverla desde backlog/
 | `[x]` | **F-XX** | Nombre de la funcionalidad | `types`, `contents`, `sidepanel` | [Ver F-XX](./features/completed/F-XX-nombre.md) |
 -->
 
+## [F-18] — Motor de Selectores Autocurativos con Aprendizaje por Refuerzo (*Self-Healing Locators*)
+- **Estado:** `[x]` Completado
+- **Resumen:** Implementación del motor de selectores adaptativos con Contextual Multi-Armed Bandits (`UCB1`), actualización tabular $Q$-Learning (Rescorla-Wagner) y huella estructural/semántica ($\mathcal{F}$ en `ElementFingerprint`) sobre [`src/contents/helpers/selector-rl-engine.ts`](../src/contents/helpers/selector-rl-engine.ts) y [`dom-selectors.ts`](../src/contents/helpers/dom-selectors.ts). Permite capturar múltiples candidatos iniciales en `PickerOverlay`, resolver y autocurar variantes de DOM polimórfico (evitando falsos positivos como precios tachados y esperas innecesarias de timeout), persistir los selectores aprendidos en `STORAGE_KEYS.STEPS`, plantillas y JSON portables, e inspeccionar/reiniciar la memoria RL desde `StepCard.tsx` (manteniendo `package.json` en `1.0.1` hasta completar también `F-11` de `v1.1.0`).
+
+| Estado | ID | Feature | Capas MV3 Modificadas | Especificación Archivada |
+| :---: | :--- | :--- | :--- | :--- |
+| `[x]` | **F-18** | Motor de Selectores Autocurativos con Aprendizaje por Refuerzo (*Multi-Armed Bandit UCB1 + $Q$-Learning*) | `types`, `contents`, `background`, `sidepanel` | [Ver F-18](./features/completed/F-18-selectores-autocurativos-rl.md) |
+
+---
+
 ## [F-19] — Extracción Estructurada de Tablas HTML (`html_table_extract`)
 - **Estado:** `[x]` Completado
 - **Resumen:** Incorporación del tercer modo de automatización nativo (`html_table_extract`) con selección visual de elementos `<table>` y fila de cabecera (`<tr>` o índice 1-based), configuración individual por columna (`textContent`, `value` o `attribute` HTML como `href`/`src`), extracción automática de todas las filas posteriores a la cabecera con paginación multipágina y soporte completo en la biblioteca local e importación/exportación JSON (manteniendo `package.json` en `1.0.1` mientras `v1.1.0` sigue pendiente).

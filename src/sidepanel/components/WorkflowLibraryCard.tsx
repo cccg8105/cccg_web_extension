@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import { useRef, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
+import { cloneWorkflowStep } from "~sidepanel/utils/step-helpers"
 import {
   exportWorkflowToJsonFile,
   parseAndValidateWorkflowJson
@@ -112,7 +113,7 @@ export function WorkflowLibraryCard({
 
     const list = savedWorkflows ?? []
     const nowIso = new Date().toISOString()
-    const clonedSteps = steps.map((s) => ({ ...s }))
+    const clonedSteps = steps.map(cloneWorkflowStep)
     const clonedListConfig: DomListConfig = {
       ...domListConfig,
       pagination: domListConfig.pagination
@@ -188,7 +189,7 @@ export function WorkflowLibraryCard({
       return
     }
 
-    onStepsChange(found.steps.map((s) => ({ ...s })))
+    onStepsChange(found.steps.map(cloneWorkflowStep))
     if (found.mode) {
       onModeChange(found.mode)
     }

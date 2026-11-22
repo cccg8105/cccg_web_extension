@@ -142,6 +142,9 @@ Si vas a realizar cambios o agregar nuevas capacidades a la extensión, consulta
 │   │       ├── dom-list-runner.ts  # Estrategia Modo 2: Extracción de listas DOM y paginación automática
 │   │       └── table-runner.ts     # Estrategia Modo 3: Extracción estructurada de tablas HTML paginadas
 │   ├── contents/
+│   │   ├── helpers/
+│   │   │   ├── dom-selectors.ts    # Utilidades puras de generación, limpieza y síntesis de selectores CSS
+│   │   │   └── selector-rl-engine.ts # Motor de selectores autocurativos (UCB1, Q-Learning y similitud por huella F)
 │   │   ├── picker-overlay.tsx      # Inspector visual DOM (elementos, contenedores, tablas <table>, filas <tr> y paginación)
 │   │   └── action-executor.ts      # Ejecutor DOM (EXECUTE_STEP, INSPECT_LIST_PAGE, INSPECT_TABLE_PAGE, EXTRACT_TABLE_ROW y CLICK_NEXT_PAGE)
 │   ├── sidepanel/

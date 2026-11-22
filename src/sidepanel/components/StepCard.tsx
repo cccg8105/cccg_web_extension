@@ -4,8 +4,12 @@ import {
   Copy,
   Crosshair,
   Plus,
-  Trash2
+  RotateCcw,
+  Sparkles,
+  Trash2,
+  X
 } from "lucide-react"
+import { useState } from "react"
 import type {
   ActionType,
   ExtractSourceType,
@@ -69,7 +73,32 @@ export function StepCard({
   onDuplicate,
   onTogglePick
 }: StepCardProps) {
+  const [showCandidates, setShowCandidates] = useState(false)
   const badge = BADGE_CONFIG[step.type] ?? BADGE_CONFIG.click
+
+  const candidates = step.selectorCandidates ?? []
+  const healedCount = candidates.filter((c) => c.source === "healed").length
+  const bestQ = candidates.reduce(
+    (max, cand) => Math.max(max, cand.qValue),
+    candidates[0]?.qValue ?? 0
+  )
+  const confidencePct = Math.round(Math.max(0, Math.min(1, bestQ)) * 100)
+  const hasRlMemory = candidates.length > 0 || Boolean(step.targetFingerprint)
+
+  const handleResetMemory = () => {
+    setShowCandidates(false)
+    onUpdate(step.id, {
+      selectorCandidates: undefined,
+      targetFingerprint: undefined
+    })
+  }
+
+  const handleRemoveCandidate = (targetSelector: string) => {
+    const remaining = candidates.filter((c) => c.selector !== targetSelector)
+    onUpdate(step.id, {
+      selectorCandidates: remaining.length > 0 ? remaining : undefined
+    })
+  }
 
   const appendVariableToStep = (colName: string) => {
     const current = step.valueTemplate ?? ""
@@ -173,6 +202,111 @@ export function StepCard({
               {isPickingThis ? "Cancelar" : "Elegir"}
             </button>
           </div>
+
+          {hasRlMemory && (
+            <div className="bg-void-black/75 border border-rim/80 rounded px-2 py-1.5 space-y-1.5">
+              <div className="flex items-center justify-between gap-1.5 text-[10px]">
+                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                  <Sparkles className="w-3 h-3 text-coral-shimmer shrink-0" />
+                  <span className="text-fog font-medium">
+                    {candidates.length}{" "}
+                    {candidates.length === 1
+                      ? "selector en memoria"
+                      : "selectores en memoria"}
+                  </span>
+                  {healedCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded bg-coral-shimmer/15 border border-coral-shimmer/40 text-coral-shimmer font-semibold">
+                      {healedCount} auto-aprendido{healedCount > 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {candidates.length > 0 && (
+                    <span className="text-ash font-mono">
+                      Confianza {confidencePct}%
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {candidates.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCandidates((prev) => !prev)}
+                      className="px-1.5 py-0.5 rounded bg-obsidian hover:bg-ember border border-rim text-limestone hover:text-parchment transition">
+                      {showCandidates ? "Ocultar" : "Ver"}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={isRunning}
+                    onClick={handleResetMemory}
+                    title="Limpiar huella y selectores aprendidos de este paso"
+                    className="p-0.5 rounded text-ash hover:text-coral-shimmer disabled:opacity-40 transition">
+                    <RotateCcw className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+
+              {showCandidates && candidates.length > 0 && (
+                <div className="space-y-1 pt-1 border-t border-rim/60 max-h-36 overflow-y-auto">
+                  {candidates.map((cand) => {
+                    const isPrimary = cand.selector === (step.selector ?? "").trim()
+                    return (
+                      <div
+                        key={cand.selector}
+                        className="flex items-center justify-between gap-1.5 text-[10px] bg-obsidian/80 border border-rim/70 rounded px-1.5 py-1">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <span
+                            className={`px-1 py-0.2 rounded text-[9px] font-semibold border shrink-0 ${
+                              cand.source === "healed"
+                                ? "bg-coral-shimmer/15 text-coral-shimmer border-coral-shimmer/40"
+                                : "bg-forest-moss/50 text-fog border-forest-deep/60"
+                            }`}>
+                            {cand.source === "healed" ? "RL" : "INI"}
+                          </span>
+                          <span
+                            title={cand.selector}
+                            className={`font-mono truncate ${
+                              isPrimary ? "text-parchment font-semibold" : "text-limestone"
+                            }`}>
+                            {cand.selector}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0 font-mono">
+                          <span className="text-ash">
+                            Q={cand.qValue.toFixed(2)}
+                          </span>
+                          <span className="text-copper text-[9px]">
+                            ({cand.successCount}/{cand.failCount})
+                          </span>
+                          {!isPrimary && (
+                            <button
+                              type="button"
+                              disabled={isRunning}
+                              onClick={() =>
+                                onUpdate(step.id, { selector: cand.selector })
+                              }
+                              title="Fijar como selector principal"
+                              className="px-1 py-0.2 rounded bg-forest-moss hover:bg-forest-deep text-parchment border border-forest-deep text-[9px] disabled:opacity-40">
+                              Usar
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            disabled={isRunning}
+                            onClick={() => handleRemoveCandidate(cand.selector)}
+                            title="Quitar candidato del pool"
+                            className="p-0.5 text-ash hover:text-rose-400 disabled:opacity-40">
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

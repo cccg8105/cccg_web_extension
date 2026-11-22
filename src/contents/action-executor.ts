@@ -1,13 +1,25 @@
 import type { PlasmoCSConfig } from "plasmo"
+import { generateCandidateSelectors } from "~contents/helpers/dom-selectors"
+import {
+  RL_TAU_MIN,
+  buildElementFingerprint,
+  buildInitialSelectorCandidates,
+  computeSimilarityScore,
+  exploreAndHealInContainer,
+  rankCandidatesByUCB1,
+  upsertCandidateInPool
+} from "~contents/helpers/selector-rl-engine"
 import type {
   ClickNextPageResponse,
   ContentScriptRequest,
   DataRecord,
+  ElementFingerprint,
   ExecuteStepResponse,
   ExtractTableRowPayload,
   ExtractTableRowResponse,
   InspectListPageResponse,
   InspectTablePageResponse,
+  SelectorCandidate,
   TableExtractColumnConfig,
   WorkflowStep
 } from "~types/workflow"
@@ -144,20 +156,366 @@ function setNativeValue(
   element.dispatchEvent(new Event("change", { bubbles: true }))
 }
 
+interface ResolvedTargetOutcome {
+  ok: true
+  element: HTMLElement
+  updatedCandidates?: SelectorCandidate[]
+  healedSelector?: string
+  healedSimilarity?: number
+  activeSelectorUsed?: string
+  bootstrappedFingerprint?: ElementFingerprint
+}
+
+interface FailedTargetOutcome {
+  ok: false
+  message: string
+  updatedCandidates?: SelectorCandidate[]
+}
+
+function hasRequiredExtractData(el: Element, step: WorkflowStep): boolean {
+  if (step.type !== "extract") return true
+  const source = step.extractSource ?? "textContent"
+  if (source === "attribute" && step.extractAttribute?.trim()) {
+    const val = el.getAttribute(step.extractAttribute.trim())
+    return Boolean(val && val.trim())
+  }
+  if (source === "textContent") {
+    return Boolean((el.textContent ?? "").replace(/\s+/g, " ").trim())
+  }
+  return true
+}
+
+function buildWorkingCandidatePool(
+  step: WorkflowStep,
+  primarySelector: string
+): SelectorCandidate[] {
+  const existing = Array.isArray(step.selectorCandidates)
+    ? [...step.selectorCandidates]
+    : []
+
+  if (existing.length === 0) {
+    return buildInitialSelectorCandidates([{ selector: primarySelector }])
+  }
+
+  const hasPrimary = existing.some((c) => c.selector === primarySelector)
+  const ordered = rankCandidatesByUCB1(existing, primarySelector)
+
+  if (!hasPrimary && primarySelector) {
+    return [
+      {
+        selector: primarySelector,
+        qValue: 0.92,
+        successCount: 0,
+        failCount: 0,
+        source: "initial"
+      },
+      ...ordered
+    ]
+  }
+
+  return ordered
+}
+
+function probeCandidatePool(
+  orderedPool: SelectorCandidate[],
+  step: WorkflowStep,
+  container: Element,
+  queryRoot: Document | Element,
+  primarySelector: string
+): {
+  matchedCandidate?: SelectorCandidate
+  element?: HTMLElement
+  similarity?: number
+  softFallback?: { candidate: SelectorCandidate; element: HTMLElement; sim: number }
+  penalties: Array<{ selector: string; reward: number; source: "initial" | "healed" }>
+} {
+  const penalties: Array<{
+    selector: string
+    reward: number
+    source: "initial" | "healed"
+  }> = []
+  let softFallback:
+    | { candidate: SelectorCandidate; element: HTMLElement; sim: number }
+    | undefined
+
+  for (const cand of orderedPool) {
+    let foundEl: Element | null = null
+    try {
+      foundEl = queryRoot.querySelector(cand.selector)
+    } catch {
+      penalties.push({ selector: cand.selector, reward: -1, source: cand.source })
+      continue
+    }
+
+    if (!foundEl) {
+      penalties.push({ selector: cand.selector, reward: -1, source: cand.source })
+      continue
+    }
+
+    const hasData = hasRequiredExtractData(foundEl, step)
+    if (!step.targetFingerprint) {
+      if (hasData) {
+        return {
+          matchedCandidate: cand,
+          element: foundEl as HTMLElement,
+          penalties
+        }
+      }
+      if (!softFallback) {
+        softFallback = {
+          candidate: cand,
+          element: foundEl as HTMLElement,
+          sim: 0.5
+        }
+      }
+      penalties.push({ selector: cand.selector, reward: -0.5, source: cand.source })
+      continue
+    }
+
+    const sim = computeSimilarityScore(
+      foundEl,
+      step.targetFingerprint,
+      container,
+      step
+    )
+
+    if (sim >= RL_TAU_MIN && hasData) {
+      return {
+        matchedCandidate: cand,
+        element: foundEl as HTMLElement,
+        similarity: sim,
+        penalties
+      }
+    }
+
+    // Keep primary selector match as last-resort fallback so minor layout/text changes never break working steps
+    if (
+      !softFallback &&
+      sim >= 0.42 &&
+      (cand.selector === primarySelector || orderedPool.length === 1)
+    ) {
+      softFallback = {
+        candidate: cand,
+        element: foundEl as HTMLElement,
+        sim
+      }
+    }
+
+    penalties.push({ selector: cand.selector, reward: -0.5, source: cand.source })
+  }
+
+  return { softFallback, penalties }
+}
+
+function applyPenaltiesToPool(
+  basePool: SelectorCandidate[],
+  penalties: Array<{ selector: string; reward: number; source: "initial" | "healed" }>
+): SelectorCandidate[] {
+  let pool = [...basePool]
+  for (const p of penalties) {
+    pool = upsertCandidateInPool(pool, p.selector, p.reward, p.source)
+  }
+  return pool
+}
+
+function buildSuccessOutcome(
+  element: HTMLElement,
+  step: WorkflowStep,
+  container: Element,
+  workingPool: SelectorCandidate[],
+  penalties: Array<{ selector: string; reward: number; source: "initial" | "healed" }>,
+  matchedSelector: string,
+  matchedSource: "initial" | "healed",
+  reward: number,
+  extra?: { healedSelector?: string; healedSimilarity?: number }
+): ResolvedTargetOutcome {
+  let nextPool = workingPool
+  let bootstrappedFingerprint: ElementFingerprint | undefined
+
+  if (!step.targetFingerprint && (!step.selectorCandidates || step.selectorCandidates.length === 0)) {
+    const isDocRoot = container === document.body
+    bootstrappedFingerprint = buildElementFingerprint(
+      element,
+      isDocRoot ? undefined : container,
+      step
+    )
+    const generated = generateCandidateSelectors(
+      element,
+      isDocRoot ? undefined : container
+    )
+    nextPool = buildInitialSelectorCandidates([
+      { selector: matchedSelector },
+      ...generated.map((selector) => ({ selector }))
+    ])
+  } else {
+    nextPool = applyPenaltiesToPool(workingPool, penalties)
+  }
+
+  nextPool = upsertCandidateInPool(
+    nextPool,
+    matchedSelector,
+    Math.max(0.55, reward),
+    matchedSource,
+    reward
+  )
+
+  return {
+    ok: true,
+    element,
+    updatedCandidates: nextPool,
+    activeSelectorUsed: matchedSelector,
+    bootstrappedFingerprint,
+    ...extra
+  }
+}
+
+async function resolveWithAdaptivePool(
+  step: WorkflowStep,
+  container: Element,
+  queryRoot: Document | Element,
+  primarySelector: string,
+  allowSettleDelay: boolean,
+  waitFallbackTimeoutMs: number
+): Promise<ResolvedTargetOutcome | FailedTargetOutcome> {
+  const workingPool = buildWorkingCandidatePool(step, primarySelector)
+
+  let probe = probeCandidatePool(
+    workingPool,
+    step,
+    container,
+    queryRoot,
+    primarySelector
+  )
+
+  if (probe.matchedCandidate && probe.element) {
+    return buildSuccessOutcome(
+      probe.element,
+      step,
+      container,
+      workingPool,
+      probe.penalties,
+      probe.matchedCandidate.selector,
+      probe.matchedCandidate.source,
+      probe.similarity ?? 0.85
+    )
+  }
+
+  if (allowSettleDelay && !probe.softFallback) {
+    await new Promise((resolve) => setTimeout(resolve, 180))
+    probe = probeCandidatePool(
+      workingPool,
+      step,
+      container,
+      queryRoot,
+      primarySelector
+    )
+    if (probe.matchedCandidate && probe.element) {
+      return buildSuccessOutcome(
+        probe.element,
+        step,
+        container,
+        workingPool,
+        probe.penalties,
+        probe.matchedCandidate.selector,
+        probe.matchedCandidate.source,
+        probe.similarity ?? 0.85
+      )
+    }
+  }
+
+  if (step.targetFingerprint) {
+    const healed = exploreAndHealInContainer(
+      container,
+      step.targetFingerprint,
+      step
+    )
+    if (healed) {
+      const bonusOverFallback =
+        !probe.softFallback || healed.similarity >= probe.softFallback.sim + 0.08
+      if (bonusOverFallback) {
+        return buildSuccessOutcome(
+          healed.element,
+          step,
+          container,
+          workingPool,
+          probe.penalties,
+          healed.synthesizedSelector,
+          "healed",
+          healed.similarity,
+          {
+            healedSelector: healed.synthesizedSelector,
+            healedSimilarity: healed.similarity
+          }
+        )
+      }
+    }
+  }
+
+  if (probe.softFallback) {
+    return buildSuccessOutcome(
+      probe.softFallback.element,
+      step,
+      container,
+      workingPool,
+      [],
+      probe.softFallback.candidate.selector,
+      probe.softFallback.candidate.source,
+      Math.max(0.55, probe.softFallback.sim)
+    )
+  }
+
+  try {
+    const delayedElement =
+      queryRoot === document
+        ? await waitForElement(primarySelector, waitFallbackTimeoutMs)
+        : await waitForScopedElement(
+            container,
+            primarySelector,
+            waitFallbackTimeoutMs
+          )
+    return buildSuccessOutcome(
+      delayedElement as HTMLElement,
+      step,
+      container,
+      workingPool,
+      [],
+      primarySelector,
+      "initial",
+      0.75
+    )
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return {
+      ok: false,
+      message: msg,
+      updatedCandidates: applyPenaltiesToPool(workingPool, probe.penalties)
+    }
+  }
+}
+
 async function resolveStepTargetElement(
   step: WorkflowStep,
   listItemSelector: string | undefined,
   recordIndex: number
-): Promise<HTMLElement> {
+): Promise<ResolvedTargetOutcome | FailedTargetOutcome> {
   const trimmedListSelector = listItemSelector?.trim()
   if (trimmedListSelector) {
-    await waitForElement(trimmedListSelector, 8000)
+    try {
+      await waitForElement(trimmedListSelector, 8000)
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof Error ? err.message : String(err)
+      }
+    }
+
     const items = document.querySelectorAll(trimmedListSelector)
     const container = items[recordIndex] as HTMLElement | undefined
     if (!container) {
-      throw new Error(
-        `No se encontró el elemento #${recordIndex + 1} para la lista "${trimmedListSelector}" (total en página: ${items.length}).`
-      )
+      return {
+        ok: false,
+        message: `No se encontró el elemento #${recordIndex + 1} para la lista "${trimmedListSelector}" (total en página: ${items.length}).`
+      }
     }
 
     // Desplazar primero hacia el contenedor para disparar IntersectionObserver / lazy-loading de imágenes y precios
@@ -169,21 +527,27 @@ async function resolveStepTargetElement(
 
     const subSelector = step.selector?.trim()
     if (!subSelector || subSelector === ":scope") {
-      return container
+      return { ok: true, element: container }
     }
 
-    const scopedEl = await waitForScopedElement(container, subSelector, 4500)
-    return scopedEl as HTMLElement
+    return resolveWithAdaptivePool(step, container, container, subSelector, true, 2200)
   }
 
   if (!step.selector || !step.selector.trim()) {
-    throw new Error(
-      `El paso "${step.label}" no tiene un selector CSS configurado.`
-    )
+    return {
+      ok: false,
+      message: `El paso "${step.label}" no tiene un selector CSS configurado.`
+    }
   }
 
-  const rawElement = await waitForElement(step.selector.trim())
-  return rawElement as HTMLElement
+  return resolveWithAdaptivePool(
+    step,
+    document.body,
+    document,
+    step.selector.trim(),
+    false,
+    4500
+  )
 }
 
 async function executeDomStep(
@@ -208,11 +572,42 @@ async function executeDomStep(
     }
   }
 
-  const element = await resolveStepTargetElement(
+  const resolved = await resolveStepTargetElement(
     step,
     listItemSelector,
     recordIndex
   )
+
+  if (resolved.ok === false) {
+    return {
+      ok: false,
+      message: resolved.message,
+      ...(resolved.updatedCandidates
+        ? { updatedCandidates: resolved.updatedCandidates }
+        : {})
+    }
+  }
+
+  const element = resolved.element
+
+  const enrichResponse = (base: ExecuteStepResponse): ExecuteStepResponse => ({
+    ...base,
+    ...(resolved.updatedCandidates
+      ? { updatedCandidates: resolved.updatedCandidates }
+      : {}),
+    ...(resolved.healedSelector
+      ? { healedSelector: resolved.healedSelector }
+      : {}),
+    ...(resolved.healedSimilarity !== undefined
+      ? { healedSimilarity: resolved.healedSimilarity }
+      : {}),
+    ...(resolved.activeSelectorUsed
+      ? { activeSelectorUsed: resolved.activeSelectorUsed }
+      : {}),
+    ...(resolved.bootstrappedFingerprint
+      ? { bootstrappedFingerprint: resolved.bootstrappedFingerprint }
+      : {})
+  })
 
   element.scrollIntoView({
     block: "center",
@@ -221,7 +616,11 @@ async function executeDomStep(
   })
   flashElementHighlight(element)
 
-  const displaySelector = step.selector?.trim() || listItemSelector || ":scope"
+  const displaySelector =
+    resolved.activeSelectorUsed ||
+    step.selector?.trim() ||
+    listItemSelector ||
+    ":scope"
 
   if (step.type === "click") {
     element.focus?.()
@@ -233,10 +632,10 @@ async function executeDomStep(
     )
     element.click()
 
-    return {
+    return enrichResponse({
       ok: true,
       message: `Clic ejecutado en "${displaySelector}"`
-    }
+    })
   }
 
   if (step.type === "input") {
@@ -262,16 +661,17 @@ async function executeDomStep(
         nestedInput.focus()
         setNativeValue(nestedInput, resolvedValue)
       } else {
-        throw new Error(
-          `El elemento "${displaySelector}" no es un campo editable (input/textarea/contenteditable).`
-        )
+        return enrichResponse({
+          ok: false,
+          message: `El elemento "${displaySelector}" no es un campo editable (input/textarea/contenteditable).`
+        })
       }
     }
 
-    return {
+    return enrichResponse({
       ok: true,
       message: `Texto "${resolvedValue}" escrito en "${displaySelector}"`
-    }
+    })
   }
 
   if (step.type === "select") {
@@ -286,9 +686,10 @@ async function executeDomStep(
         : (element.querySelector("select") as HTMLSelectElement | null)
 
     if (!selectEl) {
-      throw new Error(
-        `El elemento "${displaySelector}" no es un <select> válido.`
-      )
+      return enrichResponse({
+        ok: false,
+        message: `El elemento "${displaySelector}" no es un <select> válido.`
+      })
     }
 
     const options = Array.from(selectEl.options)
@@ -301,19 +702,19 @@ async function executeDomStep(
       )
 
     if (!matchedOption) {
-      return {
+      return enrichResponse({
         ok: false,
         message: `No se encontró la opción "${resolvedValue}" dentro de "${displaySelector}".`
-      }
+      })
     }
 
     selectEl.focus()
     setNativeValue(selectEl, matchedOption.value)
 
-    return {
+    return enrichResponse({
       ok: true,
       message: `Opción "${matchedOption.textContent?.trim() || matchedOption.value}" seleccionada en "${displaySelector}"`
-    }
+    })
   }
 
   if (step.type === "keypress") {
@@ -352,10 +753,10 @@ async function executeDomStep(
       }
     }
 
-    return {
+    return enrichResponse({
       ok: true,
       message: `Tecla "${targetKey}" presionada en "${displaySelector}"`
-    }
+    })
   }
 
   if (step.type === "extract") {
@@ -376,10 +777,10 @@ async function executeDomStep(
     } else if (source === "attribute") {
       const attrName = step.extractAttribute?.trim()
       if (!attrName) {
-        return {
+        return enrichResponse({
           ok: false,
           message: `El paso "${step.label}" requiere especificar el nombre del atributo HTML a extraer.`
-        }
+        })
       }
       extractedValue = element.getAttribute(attrName) ?? ""
     } else {
@@ -391,11 +792,11 @@ async function executeDomStep(
         ? `${extractedValue.slice(0, 60)}...`
         : extractedValue
 
-    return {
+    return enrichResponse({
       ok: true,
       extractedValue,
       message: `Extraído [${columnName}]: "${preview}"`
-    }
+    })
   }
 
   return {

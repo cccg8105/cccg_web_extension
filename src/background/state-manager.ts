@@ -1,3 +1,4 @@
+import { choosePromotedSelector } from "~contents/helpers/selector-rl-engine"
 import {
   DEFAULT_EXECUTION_STATE,
   STORAGE_KEYS,
@@ -82,4 +83,65 @@ export function applyStepErrorToResults(
   }
 
   return updatedResults
+}
+
+/**
+ * Persists learned selector candidates, optional bootstrapped fingerprint,
+ * and conservatively promotes higher-performing primary selectors into STORAGE_KEYS.STEPS.
+ */
+export async function persistLearnedStepSelectors(
+  stepId: string,
+  response: ExecuteStepResponse
+): Promise<void> {
+  if (!response.updatedCandidates && !response.bootstrappedFingerprint) {
+    return
+  }
+
+  const steps = await workflowStorage.get<WorkflowStep[]>(STORAGE_KEYS.STEPS)
+  if (!Array.isArray(steps) || steps.length === 0) {
+    return
+  }
+
+  let modified = false
+  const nextSteps = steps.map((step) => {
+    if (step.id !== stepId) return step
+    if (step.type === "wait") return step
+
+    const nextCandidates = response.updatedCandidates ?? step.selectorCandidates
+    const nextFingerprint =
+      step.targetFingerprint ?? response.bootstrappedFingerprint
+
+    const currentSelector = step.selector?.trim()
+    const nextSelector =
+      currentSelector === ":scope"
+        ? currentSelector
+        : choosePromotedSelector(currentSelector, nextCandidates ?? [])
+
+    modified = true
+    return {
+      ...step,
+      ...(nextSelector ? { selector: nextSelector } : {}),
+      ...(nextCandidates ? { selectorCandidates: nextCandidates } : {}),
+      ...(nextFingerprint ? { targetFingerprint: nextFingerprint } : {})
+    }
+  })
+
+  if (modified) {
+    await workflowStorage.set(STORAGE_KEYS.STEPS, nextSteps)
+  }
+}
+
+export function formatAutoHealLogMessage(
+  contextLabel: string,
+  stepLabel: string,
+  response: ExecuteStepResponse
+): string | null {
+  if (!response.healedSelector) {
+    return null
+  }
+  const simPct =
+    response.healedSimilarity !== undefined
+      ? ` (similitud ${Math.round(response.healedSimilarity * 100)}%)`
+      : ""
+  return `[Auto-Heal] ${contextLabel} (${stepLabel}): Selector alternativo aprendido "${response.healedSelector}"${simPct}`
 }
