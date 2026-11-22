@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import { useRef, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
+import { cloneWorkflowStep } from "~sidepanel/utils/step-helpers"
 import {
   exportWorkflowToJsonFile,
   parseAndValidateWorkflowJson
@@ -22,6 +23,7 @@ import type {
   DomListConfig,
   ExecutionOptions,
   SavedWorkflow,
+  TableExtractConfig,
   WorkflowMode,
   WorkflowStep
 } from "~types/workflow"
@@ -30,19 +32,33 @@ interface WorkflowLibraryCardProps {
   steps: WorkflowStep[]
   mode: WorkflowMode
   domListConfig: DomListConfig
+  tableExtractConfig: TableExtractConfig
   onStepsChange: (steps: WorkflowStep[]) => void
   onModeChange: (mode: WorkflowMode) => void
   onDomListConfigChange: (config: DomListConfig) => void
+  onTableExtractConfigChange: (config: TableExtractConfig) => void
   isRunning: boolean
+}
+
+function cloneTableExtractConfig(
+  config: TableExtractConfig
+): TableExtractConfig {
+  return {
+    ...config,
+    columns: (config.columns ?? []).map((col) => ({ ...col })),
+    pagination: config.pagination ? { ...config.pagination } : undefined
+  }
 }
 
 export function WorkflowLibraryCard({
   steps,
   mode,
   domListConfig,
+  tableExtractConfig,
   onStepsChange,
   onModeChange,
   onDomListConfigChange,
+  onTableExtractConfigChange,
   isRunning
 }: WorkflowLibraryCardProps) {
   const [savedWorkflows, setSavedWorkflows] = useStorage<SavedWorkflow[]>(
@@ -70,7 +86,15 @@ export function WorkflowLibraryCard({
   const workflowFileInputRef = useRef<HTMLInputElement | null>(null)
 
   const handleSaveWorkflow = () => {
-    if (steps.length === 0) {
+    if (mode === "html_table_extract") {
+      if (!tableExtractConfig.tableSelector?.trim()) {
+        setWorkflowFeedback({
+          type: "error",
+          text: "Configura o selecciona una tabla HTML antes de guardar el flujo."
+        })
+        return
+      }
+    } else if (steps.length === 0) {
       setWorkflowFeedback({
         type: "error",
         text: "Agrega al menos un paso antes de guardar el flujo."
@@ -89,13 +113,14 @@ export function WorkflowLibraryCard({
 
     const list = savedWorkflows ?? []
     const nowIso = new Date().toISOString()
-    const clonedSteps = steps.map((s) => ({ ...s }))
+    const clonedSteps = steps.map(cloneWorkflowStep)
     const clonedListConfig: DomListConfig = {
       ...domListConfig,
       pagination: domListConfig.pagination
         ? { ...domListConfig.pagination }
         : undefined
     }
+    const clonedTableConfig = cloneTableExtractConfig(tableExtractConfig)
     const clonedExecOptions: ExecutionOptions = {
       ...(executionOptions ?? DEFAULT_EXECUTION_OPTIONS)
     }
@@ -115,6 +140,7 @@ export function WorkflowLibraryCard({
               updatedAt: nowIso,
               mode,
               domListConfig: clonedListConfig,
+              tableExtractConfig: clonedTableConfig,
               executionOptions: clonedExecOptions,
               steps: clonedSteps
             }
@@ -124,7 +150,10 @@ export function WorkflowLibraryCard({
       setSelectedWorkflowId(existingByNameOrId.id)
       setWorkflowFeedback({
         type: "ok",
-        text: `Flujo "${trimmedName}" actualizado (${clonedSteps.length} pasos).`
+        text:
+          mode === "html_table_extract"
+            ? `Flujo de tabla "${trimmedName}" actualizado (${clonedTableConfig.columns.length} cols).`
+            : `Flujo "${trimmedName}" actualizado (${clonedSteps.length} pasos).`
       })
       return
     }
@@ -135,6 +164,7 @@ export function WorkflowLibraryCard({
       updatedAt: nowIso,
       mode,
       domListConfig: clonedListConfig,
+      tableExtractConfig: clonedTableConfig,
       executionOptions: clonedExecOptions,
       steps: clonedSteps
     }
@@ -159,7 +189,7 @@ export function WorkflowLibraryCard({
       return
     }
 
-    onStepsChange(found.steps.map((s) => ({ ...s })))
+    onStepsChange(found.steps.map(cloneWorkflowStep))
     if (found.mode) {
       onModeChange(found.mode)
     }
@@ -171,6 +201,11 @@ export function WorkflowLibraryCard({
           : undefined
       })
     }
+    if (found.tableExtractConfig) {
+      onTableExtractConfigChange(
+        cloneTableExtractConfig(found.tableExtractConfig)
+      )
+    }
     if (found.executionOptions) {
       setExecutionOptions({ ...found.executionOptions })
     }
@@ -178,7 +213,10 @@ export function WorkflowLibraryCard({
     setSelectedWorkflowId(found.id)
     setWorkflowFeedback({
       type: "ok",
-      text: `Flujo "${found.name}" cargado (${found.steps.length} pasos).`
+      text:
+        found.mode === "html_table_extract"
+          ? `Flujo de tabla "${found.name}" cargado (${found.tableExtractConfig?.columns?.length ?? 0} cols).`
+          : `Flujo "${found.name}" cargado (${found.steps.length} pasos).`
     })
   }
 
@@ -201,7 +239,15 @@ export function WorkflowLibraryCard({
   }
 
   const handleExportSteps = () => {
-    if (steps.length === 0) {
+    if (mode === "html_table_extract") {
+      if (!tableExtractConfig.tableSelector?.trim()) {
+        setWorkflowFeedback({
+          type: "error",
+          text: "No hay tabla HTML configurada para exportar."
+        })
+        return
+      }
+    } else if (steps.length === 0) {
       setWorkflowFeedback({
         type: "error",
         text: "No hay pasos configurados para exportar."
@@ -214,11 +260,15 @@ export function WorkflowLibraryCard({
       steps,
       mode,
       domListConfig,
-      executionOptions ?? DEFAULT_EXECUTION_OPTIONS
+      executionOptions ?? DEFAULT_EXECUTION_OPTIONS,
+      tableExtractConfig
     )
     setWorkflowFeedback({
       type: "ok",
-      text: `Flujo exportado (${steps.length} pasos).`
+      text:
+        mode === "html_table_extract"
+          ? `Flujo de tabla exportado (${tableExtractConfig.columns.length} cols).`
+          : `Flujo exportado (${steps.length} pasos).`
     })
   }
 
@@ -248,12 +298,20 @@ export function WorkflowLibraryCard({
         if (validation.domListConfig !== undefined) {
           onDomListConfigChange(validation.domListConfig)
         }
+        if (validation.tableExtractConfig !== undefined) {
+          onTableExtractConfigChange(
+            cloneTableExtractConfig(validation.tableExtractConfig)
+          )
+        }
         if (validation.executionOptions !== undefined) {
           setExecutionOptions(validation.executionOptions)
         }
         setWorkflowFeedback({
           type: "ok",
-          text: `Se importaron ${validation.steps.length} pasos desde "${file.name}".`
+          text:
+            validation.mode === "html_table_extract"
+              ? `Flujo de tabla importado (${validation.tableExtractConfig?.columns?.length ?? 0} cols) desde "${file.name}".`
+              : `Se importaron ${validation.steps.length} pasos desde "${file.name}".`
         })
       } finally {
         if (workflowFileInputRef.current) {
@@ -292,7 +350,7 @@ export function WorkflowLibraryCard({
             type="button"
             disabled={isRunning}
             onClick={handleExportSteps}
-            title="Exportar pasos actuales a archivo .json"
+            title="Exportar flujo actual a archivo .json"
             className="px-2 py-1 rounded bg-void-black hover:bg-obsidian disabled:opacity-40 text-limestone hover:text-parchment text-[10px] font-medium flex items-center gap-1 border border-rim transition">
             <Download className="w-3 h-3 text-forest-deep" />
             Exportar
@@ -337,8 +395,11 @@ export function WorkflowLibraryCard({
             <option value="">-- Seleccionar flujo guardado --</option>
             {savedWorkflows.map((wf) => (
               <option key={wf.id} value={wf.id}>
-                {wf.name} ({wf.steps.length} pasos
-                {wf.mode === "dom_list_extract" ? " · Lista Web" : ""})
+                {wf.name} (
+                {wf.mode === "html_table_extract"
+                  ? `${wf.tableExtractConfig?.columns?.length ?? 0} cols · Tabla HTML`
+                  : `${wf.steps.length} pasos${wf.mode === "dom_list_extract" ? " · Lista Web" : ""}`}
+                )
               </option>
             ))}
           </select>

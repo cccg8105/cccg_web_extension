@@ -1,4 +1,4 @@
-import { Database, ListOrdered, Play } from "lucide-react"
+import { Database, ListOrdered, Play, Table } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 import { ModeSelectorBar } from "~sidepanel/components/ModeSelectorBar"
@@ -8,6 +8,7 @@ import { RunTab } from "~sidepanel/components/tabs/RunTab"
 import { StepsTab } from "~sidepanel/components/tabs/StepsTab"
 import {
   DEFAULT_EXECUTION_STATE,
+  DEFAULT_TABLE_EXTRACT_CONFIG,
   DEFAULT_WORKFLOW_MODE,
   SAMPLE_RECORDS,
   SAMPLE_STEPS,
@@ -17,6 +18,7 @@ import {
 import type {
   DataRecord,
   ExecutionState,
+  TableExtractConfig,
   WorkflowMode,
   WorkflowStep
 } from "~types/workflow"
@@ -48,6 +50,14 @@ function SidePanelApp() {
     DEFAULT_WORKFLOW_MODE
   )
 
+  const [tableExtractConfig] = useStorage<TableExtractConfig>(
+    {
+      key: STORAGE_KEYS.TABLE_EXTRACT_CONFIG,
+      instance: workflowStorage
+    },
+    DEFAULT_TABLE_EXTRACT_CONFIG
+  )
+
   const [executionState] = useStorage<ExecutionState>(
     {
       key: STORAGE_KEYS.EXECUTION_STATE,
@@ -58,17 +68,19 @@ function SidePanelApp() {
 
   const [activeTab, setActiveTab] = useState<"steps" | "data" | "run">("steps")
   const currentMode = workflowMode ?? DEFAULT_WORKFLOW_MODE
-  const isDomListMode = currentMode === "dom_list_extract"
+  const isTableMode = currentMode === "html_table_extract"
+  const hideDataTab =
+    currentMode === "dom_list_extract" || currentMode === "html_table_extract"
 
   useEffect(() => {
-    if (isDomListMode && activeTab === "data") {
+    if (hideDataTab && activeTab === "data") {
       setActiveTab("steps")
     }
-  }, [isDomListMode, activeTab])
+  }, [hideDataTab, activeTab])
 
   const handleChangeMode = (nextMode: WorkflowMode) => {
     setWorkflowMode(nextMode)
-    if (nextMode === "dom_list_extract" && activeTab === "data") {
+    if (nextMode !== "records_loop" && activeTab === "data") {
       setActiveTab("steps")
     }
   }
@@ -85,7 +97,7 @@ function SidePanelApp() {
 
       <nav
         className={`grid ${
-          isDomListMode ? "grid-cols-2" : "grid-cols-3"
+          hideDataTab ? "grid-cols-2" : "grid-cols-3"
         } bg-void-black border-b border-rim p-1 gap-1`}>
         <button
           type="button"
@@ -95,11 +107,20 @@ function SidePanelApp() {
               ? "bg-forest-deep text-parchment border border-forest-deep shadow-sm"
               : "text-ash hover:text-parchment hover:bg-ember"
           }`}>
-          <ListOrdered className="w-3.5 h-3.5" />
-          Pasos ({steps?.length ?? 0})
+          {isTableMode ? (
+            <>
+              <Table className="w-3.5 h-3.5" />
+              Tabla ({tableExtractConfig?.columns?.length ?? 0})
+            </>
+          ) : (
+            <>
+              <ListOrdered className="w-3.5 h-3.5" />
+              Pasos ({steps?.length ?? 0})
+            </>
+          )}
         </button>
 
-        {!isDomListMode && (
+        {!hideDataTab && (
           <button
             type="button"
             onClick={() => setActiveTab("data")}
@@ -128,7 +149,7 @@ function SidePanelApp() {
 
       <main className="flex-1 overflow-y-auto p-3 space-y-3">
         {activeTab === "steps" && <StepsTab />}
-        {!isDomListMode && activeTab === "data" && <DataTab />}
+        {!hideDataTab && activeTab === "data" && <DataTab />}
         {activeTab === "run" && <RunTab />}
       </main>
     </div>

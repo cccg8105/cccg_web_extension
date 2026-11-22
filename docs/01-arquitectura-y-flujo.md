@@ -21,7 +21,7 @@ flowchart TB
 
   subgraph BackgroundContext ["Contexto 2: Background Service Worker"]
     MsgListener["src/background/index.ts (onMessage Router)"]
-    Orchestrator["runners/orchestrator.ts + records-runner.ts"]
+    Orchestrator["runners/orchestrator.ts + records/dom-list/table runners"]
     TabMessenger["tab-messenger.ts (sendMessageToTabWithRetry)"]
     StateMgr["state-manager.ts (updateExecutionState)"]
   end
@@ -49,9 +49,9 @@ flowchart TB
 
 | Contexto | Archivos fuente | Qué DEBE hacer | Qué NUNCA debe hacer |
 | :--- | :--- | :--- | :--- |
-| **1. Side Panel UI** | [`src/sidepanel/index.tsx`](../src/sidepanel/index.tsx)<br>`src/sidepanel/components/**`<br>`src/sidepanel/utils/**` | Renderizar el selector de modo (`ModeSelectorBar`), pestañas (`StepsTab`, `DataTab`, `RunTab`), configuración de listas DOM y paginación (`DomListConfigCard`), plantillas (`WorkflowLibraryCard`), parseo CSV/JSON (`records-parser.ts`), exportación de reportes (`workflow-io.ts`) y envío de comandos (`sendOrchestratorCommand`). | **Nunca** ejecutar el bucle iterativo ni intentar acceder al DOM de la pestaña activa directamente. |
-| **2. Background Service Worker** | [`src/background/index.ts`](../src/background/index.ts)<br>[`src/background/runners/orchestrator.ts`](../src/background/runners/orchestrator.ts)<br>[`src/background/runners/records-runner.ts`](../src/background/runners/records-runner.ts)<br>[`src/background/runners/dom-list-runner.ts`](../src/background/runners/dom-list-runner.ts)<br>[`src/background/tab-messenger.ts`](../src/background/tab-messenger.ts)<br>[`src/background/state-manager.ts`](../src/background/state-manager.ts) | Ser el **único dueño del bucle de ejecución (`runWorkflowLoop`)**, enrutar según `WORKFLOW_MODE` hacia `runRecordsIteration` o `runDomListExtraction`, resolver la pestaña activa (`getActiveTabId`), esperar a que la pestaña cargue (`waitForTabComplete`) y reintentar el envío de mensajes (`sendMessageToTabWithRetry`). | **Nunca** asumir que existe `window` o `document`. Todo acceso al DOM se delega al Content Script mediante `EXECUTE_STEP`, `INSPECT_LIST_PAGE` o `CLICK_NEXT_PAGE`. |
-| **3. Content Scripts (DOM)** | [`src/contents/action-executor.ts`](../src/contents/action-executor.ts)<br>[`src/contents/picker-overlay.tsx`](../src/contents/picker-overlay.tsx) | Ejecutar pasos individuales sobre el DOM global o acotados a un ítem de lista (`executeDomStep`), inspeccionar listas y paginar (`handleInspectListPage`, `handleClickNextPage`), y proveer el selector visual interactivo (`PickerOverlay`) para pasos, contenedores repetitivos y botón Siguiente. | **Nunca** almacenar el estado maestro del bucle en variables locales de la página (si la página navega o se recarga, el contexto del Content Script se destruye). |
+| **1. Side Panel UI** | [`src/sidepanel/index.tsx`](../src/sidepanel/index.tsx)<br>`src/sidepanel/components/**`<br>`src/sidepanel/utils/**` | Renderizar el selector de modo (`ModeSelectorBar`: `records_loop`, `dom_list_extract` y `html_table_extract`), pestañas (`StepsTab`, `DataTab`, `RunTab`), configuración de listas DOM (`DomListConfigCard`), tablas HTML y columnas (`TableExtractConfigCard`), plantillas (`WorkflowLibraryCard`), parseo CSV/JSON (`records-parser.ts`), exportación de reportes (`workflow-io.ts`) y envío de comandos (`sendOrchestratorCommand`). | **Nunca** ejecutar el bucle iterativo ni intentar acceder al DOM de la pestaña activa directamente. |
+| **2. Background Service Worker** | [`src/background/index.ts`](../src/background/index.ts)<br>[`src/background/runners/orchestrator.ts`](../src/background/runners/orchestrator.ts)<br>[`src/background/runners/records-runner.ts`](../src/background/runners/records-runner.ts)<br>[`src/background/runners/dom-list-runner.ts`](../src/background/runners/dom-list-runner.ts)<br>[`src/background/runners/table-runner.ts`](../src/background/runners/table-runner.ts)<br>[`src/background/tab-messenger.ts`](../src/background/tab-messenger.ts)<br>[`src/background/state-manager.ts`](../src/background/state-manager.ts) | Ser el **único dueño del bucle de ejecución (`runWorkflowLoop`)**, enrutar según `WORKFLOW_MODE` hacia `runRecordsIteration`, `runDomListExtraction` o `runHtmlTableExtraction`, sincronizar el estado de selección visual (`syncPickerStateInActiveTab`), garantizar la inyección dinámica de Content Scripts en pestañas preexistentes (`ensureContentScriptsInTab`), actualizar métricas de avance (`detectedListCount`, `detectedTableRowCount`, `detectedTableColumnCount`), resolver la pestaña activa (`getActiveTabId`), esperar a que la pestaña cargue (`waitForTabComplete`) y reintentar el envío de mensajes (`sendMessageToTabWithRetry`). | **Nunca** asumir que existe `window` o `document`. Todo acceso al DOM se delega al Content Script mediante `EXECUTE_STEP`, `INSPECT_LIST_PAGE`, `INSPECT_TABLE_PAGE`, `EXTRACT_TABLE_ROW`, `CLICK_NEXT_PAGE` o `SYNC_PICKING_STATE`. |
+| **3. Content Scripts (DOM)** | [`src/contents/action-executor.ts`](../src/contents/action-executor.ts)<br>[`src/contents/picker-overlay.tsx`](../src/contents/picker-overlay.tsx)<br>[`src/contents/helpers/dom-selectors.ts`](../src/contents/helpers/dom-selectors.ts)<br>[`src/contents/helpers/selector-rl-engine.ts`](../src/contents/helpers/selector-rl-engine.ts) | Ejecutar pasos individuales sobre el DOM global o acotados a un ítem de lista (`executeDomStep`), resolver selectores con aprendizaje por refuerzo UCB1 + autocuración por similitud (`selector-rl-engine.ts`), inspeccionar listas y tablas (`handleInspectListPage`, `handleInspectTablePage`, `handleExtractTableRow`), avanzar paginación (`handleClickNextPage`) y proveer el selector visual interactivo (`PickerOverlay`) capturando la huella inicial (`ElementFingerprint`) y el pool `selectorCandidates`. | **Nunca** almacenar el estado maestro del bucle en variables locales de la página (si la página navega o se recarga, el contexto del Content Script se destruye). |
 
 ---
 
@@ -73,13 +73,14 @@ sequenceDiagram
   User->>SidePanel: Clic en botón "Elegir" de un paso (stepId)
   SidePanel->>BG: sendOrchestratorCommand({ type: "START_PICKING", stepId })
   BG->>Storage: updateExecutionState({ status: "picking", pickingForStepId: stepId })
+  BG->>Picker: ensureContentScriptsInTab() + SYNC_PICKING_STATE
   Storage-->>SidePanel: Reactiva UI (botón cambia a "Cancelar")
-  Storage-->>Picker: useStorage detecta status === "picking" y monta overlay
+  Storage-->>Picker: useStorage / SYNC_PICKING_STATE activa overlay
   User->>Picker: Mueve el cursor sobre la página (mousemove capture)
-  Picker->>Picker: computeSafeSelector(target) con @medv/finder y dibuja HighlightBox
+  Picker->>Picker: getTargetPageElementAtPoint() + computeSafeSelector() y dibuja HighlightBox
   User->>Picker: Clic sobre el elemento deseado (click capture)
   Picker->>Picker: preventDefault() + stopImmediatePropagation()
-  Picker->>Storage: setSteps(updatedSteps con nuevo selector)
+  Picker->>Storage: setSteps / setDomListConfig / setTableExtractConfig
   Picker->>Storage: setExecutionState({ status: "idle", lastPickedSelector, logs })
   Storage-->>SidePanel: Input de selector CSS se actualiza automáticamente
 ```
@@ -106,10 +107,10 @@ sequenceDiagram
     BG->>Storage: Lee state, records y steps
     BG->>BG: getActiveTabId() + waitForTabComplete(tabId)
     BG->>Executor: chrome.tabs.sendMessage({ type: "EXECUTE_STEP", step, record })
-    Executor->>Executor: waitForElement(selector) + scrollIntoView + flashElementHighlight
-    Executor->>Executor: Ejecuta acción (click / input con setNativeValue / wait)
-    Executor-->>BG: ExecuteStepResponse ({ ok: true, message })
-    BG->>Storage: Avanza currentStepIndex / currentRecordIndex y agrega entrada a logs
+    Executor->>Executor: resolveStepTargetElement() (UCB1 / Self-Healing + waitForElement) + scrollIntoView + flashElementHighlight
+    Executor->>Executor: Ejecuta acción (click / input con setNativeValue / wait / extract)
+    Executor-->>BG: ExecuteStepResponse ({ ok: true, message, updatedCandidates, healedSelector })
+    BG->>Storage: persistLearnedStepSelectors() + Avanza índices + agrega entrada a logs
     Storage-->>SidePanel: Actualiza barra de progreso y bitácora en tiempo real
   end
 

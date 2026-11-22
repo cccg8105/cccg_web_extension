@@ -2,7 +2,7 @@
 
 - **ID:** `F-18`
 - **Versión objetivo:** `v1.1.0`
-- **Estado:** `[ ] Pendiente`
+- **Estado:** `[x] Completado`
 - **Prioridad:** Alta
 - **Esfuerzo estimado:** L
 - **Playbook técnico relacionado:** [04. Motor de Selectores Autocurativos con Aprendizaje por Refuerzo (`docs/04-selectores-autocurativos-rl.md`)](../../docs/04-selectores-autocurativos-rl.md)
@@ -34,23 +34,23 @@ Esta funcionalidad implementa el motor diseñado en [`docs/04-selectores-autocur
 
 ## 3. Impacto Técnico por Capa (Arquitectura MV3)
 
-- [ ] **Contratos y Tipos (`src/types/workflow.ts`):**
+- [x] **Contratos y Tipos (`src/types/workflow.ts`):**
   - Definir `TextPatternType`, `ElementFingerprint` y `SelectorCandidate` (`selector`, `qValue`, `successCount`, `failCount`, `source: "initial" | "healed"`).
   - Extender `WorkflowStep` con `selectorCandidates?: SelectorCandidate[]` y `targetFingerprint?: ElementFingerprint`.
   - Extender `ExecuteStepResponse` con `updatedCandidates?: SelectorCandidate[]` y `healedSelector?: string`.
-- [ ] **Content Scripts (`src/contents/selector-rl-engine.ts`, `picker-overlay.tsx` y `action-executor.ts`):**
-  - Crear `src/contents/selector-rl-engine.ts` con las funciones puras del agente RL:
-    - `buildElementFingerprint(el: Element, container?: Element): ElementFingerprint`
-    - `computeSimilarityScore(candidateEl: Element, fingerprint: ElementFingerprint, container?: Element): number`
-    - `rankCandidatesByUCB1(candidates: SelectorCandidate[]): SelectorCandidate[]`
+- [x] **Content Scripts (`src/contents/helpers/selector-rl-engine.ts`, `src/contents/helpers/dom-selectors.ts`, `picker-overlay.tsx` y `action-executor.ts`):**
+  - Crear `src/contents/helpers/selector-rl-engine.ts` (y `dom-selectors.ts` compartido) con las funciones puras del agente RL:
+    - `buildElementFingerprint(el: Element, container?: Element, step?: Partial<WorkflowStep>): ElementFingerprint`
+    - `computeSimilarityScore(candidateEl: Element, fingerprint: ElementFingerprint, container?: Element, step?: Partial<WorkflowStep>): number`
+    - `rankCandidatesByUCB1(candidates: SelectorCandidate[], preferredPrimarySelector?: string): SelectorCandidate[]`
     - `updateCandidateQValue(candidate: SelectorCandidate, reward: number, alpha?: number): SelectorCandidate`
-    - `exploreAndHealInContainer(container: Element, fingerprint: ElementFingerprint): { element: HTMLElement; synthesizedSelector: string; similarity: number } | null`
+    - `exploreAndHealInContainer(container: Element, fingerprint: ElementFingerprint, step?: Partial<WorkflowStep>): { element: HTMLElement; synthesizedSelector: string; similarity: number } | null`
   - En `picker-overlay.tsx`: poblar `selectorCandidates` y `targetFingerprint` al capturar un elemento para un paso.
   - En `action-executor.ts`: evaluar el pool ordenado por UCB1, aplicar `exploreAndHealInContainer` si todos fallan y retornar `updatedCandidates` + `healedSelector`.
-- [ ] **Orquestador Background (`src/background/runners/dom-list-runner.ts` y `records-runner.ts`):**
+- [x] **Orquestador Background (`src/background/state-manager.ts`, `runners/dom-list-runner.ts` y `runners/records-runner.ts`):**
   - Cuando `stepResponse.updatedCandidates` esté presente, persistir la actualización de `selectorCandidates` (y promover el selector de mayor `qValue`) en `STORAGE_KEYS.STEPS`.
   - Registrar en `ExecutionState.logs` cuando `stepResponse.healedSelector` se haya activado.
-- [ ] **Interfaz Side Panel (`src/sidepanel/components/StepCard.tsx` y `src/sidepanel/utils/workflow-io.ts`):**
+- [x] **Interfaz Side Panel (`src/sidepanel/components/StepCard.tsx`, `WorkflowLibraryCard.tsx`, `step-helpers.ts` y `workflow-io.ts`):**
   - Mostrar el badge de candidatos en memoria / auto-aprendidos en `StepCard.tsx`.
   - Preservar `selectorCandidates` y `targetFingerprint` al guardar en biblioteca (`SavedWorkflow`) y al exportar/importar JSON (`workflow-io.ts`).
 
@@ -58,11 +58,11 @@ Esta funcionalidad implementa el motor diseñado en [`docs/04-selectores-autocur
 
 ## 4. Criterios de Aceptación (Checklist de Verificación)
 
-- [ ] Al elegir un elemento con `PickerOverlay`, el paso almacena su `targetFingerprint` y un pool inicial de `selectorCandidates`.
-- [ ] Durante la ejecución, si el selector principal no coincide en un ítem pero otro candidato del pool o la exploración activa por huella ($\text{Sim} \ge 0.70$) localiza el nodo, el paso se completa sin esperar el timeout completo de 4.5s.
-- [ ] El nuevo selector descubierto se agrega al pool (`source: "healed"`), actualiza sus pesos $Q(s_k)$ y queda persistido en `STORAGE_KEYS.STEPS` para corridas futuras.
-- [ ] Las plantillas guardadas y archivos JSON exportados conservan la memoria de selectores aprendidos.
-- [ ] Cumple con los estándares de `docs/02-patrones-y-estandares.md` y el modelo de `docs/04-selectores-autocurativos-rl.md`.
-- [ ] Documentación técnica (`README.md` y `docs/`) actualizada si cambiaron módulos, flujos o playbooks.
-- [ ] Compila sin errores de TypeScript (`npm run build`).
-- [ ] Grafo de conocimiento actualizado con `graphify update .` tras finalizar la implementación.
+- [x] Al elegir un elemento con `PickerOverlay`, el paso almacena su `targetFingerprint` y un pool inicial de `selectorCandidates`.
+- [x] Durante la ejecución, si el selector principal no coincide en un ítem pero otro candidato del pool o la exploración activa por huella ($\text{Sim} \ge 0.70$) localiza el nodo, el paso se completa sin esperar el timeout completo de 4.5s.
+- [x] El nuevo selector descubierto se agrega al pool (`source: "healed"`), actualiza sus pesos $Q(s_k)$ y queda persistido en `STORAGE_KEYS.STEPS` para corridas futuras.
+- [x] Las plantillas guardadas y archivos JSON exportados conservan la memoria de selectores aprendidos.
+- [x] Cumple con los estándares de `docs/02-patrones-y-estandares.md` y el modelo de `docs/04-selectores-autocurativos-rl.md`.
+- [x] Documentación técnica (`README.md` y `docs/`) actualizada si cambiaron módulos, flujos o playbooks.
+- [x] Compila sin errores de TypeScript (`npm run build`).
+- [x] Grafo de conocimiento actualizado con `graphify update .` tras finalizar la implementación.

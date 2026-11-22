@@ -11,29 +11,19 @@
 
 | Orden | Versión | Enfoque Principal | Estado | Hito Clave |
 | :---: | :--- | :--- | :---: | :--- |
-| **1** | **`v1.1.0`** | **Selectores Autocurativos con Aprendizaje por Refuerzo y Pasos Condicionales** | `[ ]` Planificado | Motor RL (`UCB1` + `$Q$-Learning` + Huella $\mathcal{F}$) para auto-explorar y memorizar selectores (`F-18`), junto con pasos opcionales/condicionales (`F-11`). |
-| **2** | **`v1.2.0`** | **Extracción de Tablas HTML y Automatización Asistida** | `[ ]` Planificado | Modo dedicado para extracción masiva de tablas HTML con cabecera y columnas configurables (`F-19`) y modo Grabador (`F-10`). |
+| **1** | **`v1.1.0`** | **Selectores Autocurativos con Aprendizaje por Refuerzo y Pasos Condicionales** | `[-]` Parcial | Motor RL (`UCB1` + `$Q$-Learning` + Huella $\mathcal{F}$) completado (`F-18` en [`HISTORIAL.md`](./HISTORIAL.md)); pendientes pasos opcionales/condicionales (`F-11`). |
+| **2** | **`v1.2.0`** | **Automatización Asistida** | `[ ]` Planificado | Modo Grabador (`F-10`) pendiente en Icebox (`F-19` de extracción de tablas HTML completado en [`HISTORIAL.md`](./HISTORIAL.md)). |
 
 ---
 
 ## 2. Plan Detallado de Versiones Pendientes (En Orden de Prioridad)
 
 ### Prioridad 1: `v1.1.0` — Selectores Autocurativos con Aprendizaje por Refuerzo y Pasos Condicionales
-> **Objetivo:** Dotar a la extensión de inteligencia adaptativa frente a páginas con **DOM Polimórfico** (ítems con variantes estructurales o campos opcionales), permitiendo que el sistema explore selectores alternativos cuando uno falle, memorice lo aprendido para siguientes corridas ([`docs/04-selectores-autocurativos-rl.md`](../docs/04-selectores-autocurativos-rl.md)) y omita limpiamente campos opcionales inexistentes.
+> **Objetivo:** Dotar a la extensión de inteligencia adaptativa frente a páginas con **DOM Polimórfico** (ítems con variantes estructurales o campos opcionales), permitiendo que el sistema explore selectores alternativos cuando uno falle, memorice lo aprendido para siguientes corridas (`F-18` completado) y omita limpiamente campos opcionales inexistentes (`F-11`).
 
 | Orden | Estado | ID | Feature | Prioridad | Esfuerzo | Capas MV3 Afectadas | Especificación |
 | :---: | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
-| **1** | `[ ]` | **F-18** | Motor de Selectores Autocurativos con Aprendizaje por Refuerzo (*Multi-Armed Bandit UCB1 + $Q$-Learning*) | **Alta** | L | `types`, `contents`, `background`, `sidepanel` | [Ver F-18](./features/F-18-selectores-autocurativos-rl.md) |
-| **2** | `[ ]` | **F-11** | Condicionales simples por paso (*Ejecutar paso solo si el selector existe / Paso opcional*) | **Media-Alta** | M | `types`, `contents`, `sidepanel` | [Ver F-11](./features/F-11-condicionales-simples-por-paso.md) |
-
----
-
-### Prioridad 2: `v1.2.0` — Extracción de Tablas HTML y Automatización Asistida
-> **Objetivo:** Proporcionar capacidades nativas para el raspado y extracción rápida de datos tabulares (`<table>`), permitiendo identificar dinámicamente columnas a partir de cualquier fila de encabezado y recorrer páginas con paginación automática sin requerir la creación manual de pasos individuales por celda.
-
-| Orden | Estado | ID | Feature | Prioridad | Esfuerzo | Capas MV3 Afectadas | Especificación |
-| :---: | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
-| **1** | `[ ]` | **F-19** | Modo dedicado para extracción automática de tablas HTML con selección de fila de cabecera y configuración por columna | **Alta** | L | `types`, `storage`, `contents`, `background`, `sidepanel` | [Ver F-19](./features/F-19-extraccion-tablas-html.md) |
+| **1** | `[ ]` | **F-11** | Condicionales simples por paso (*Ejecutar paso solo si el selector existe / Paso opcional*) | **Media-Alta** | M | `types`, `contents`, `sidepanel` | [Ver F-11](./features/F-11-condicionales-simples-por-paso.md) |
 
 ---
 

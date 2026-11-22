@@ -10,6 +10,7 @@ import { useMemo } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 import { DomListConfigCard } from "~sidepanel/components/DomListConfigCard"
 import { StepCard } from "~sidepanel/components/StepCard"
+import { TableExtractConfigCard } from "~sidepanel/components/TableExtractConfigCard"
 import { WorkflowLibraryCard } from "~sidepanel/components/WorkflowLibraryCard"
 import { extractColumnsFromRecords } from "~sidepanel/utils/records-parser"
 import {
@@ -21,6 +22,7 @@ import {
 import {
   DEFAULT_DOM_LIST_CONFIG,
   DEFAULT_EXECUTION_STATE,
+  DEFAULT_TABLE_EXTRACT_CONFIG,
   DEFAULT_WORKFLOW_MODE,
   SAMPLE_RECORDS,
   SAMPLE_STEPS,
@@ -32,6 +34,8 @@ import type {
   DataRecord,
   DomListConfig,
   ExecutionState,
+  PickingTargetType,
+  TableExtractConfig,
   WorkflowMode,
   WorkflowStep
 } from "~types/workflow"
@@ -69,7 +73,16 @@ export function StepsTab() {
     DEFAULT_DOM_LIST_CONFIG
   )
 
-  const [executionState] = useStorage<ExecutionState>(
+  const [tableExtractConfig, setTableExtractConfig] =
+    useStorage<TableExtractConfig>(
+      {
+        key: STORAGE_KEYS.TABLE_EXTRACT_CONFIG,
+        instance: workflowStorage
+      },
+      DEFAULT_TABLE_EXTRACT_CONFIG
+    )
+
+  const [executionState, setExecutionState] = useStorage<ExecutionState>(
     {
       key: STORAGE_KEYS.EXECUTION_STATE,
       instance: workflowStorage
@@ -81,7 +94,9 @@ export function StepsTab() {
   const currentSteps = steps ?? []
   const currentMode = workflowMode ?? DEFAULT_WORKFLOW_MODE
   const currentListConfig = domListConfig ?? DEFAULT_DOM_LIST_CONFIG
+  const currentTableConfig = tableExtractConfig ?? DEFAULT_TABLE_EXTRACT_CONFIG
   const isRunning = executionState?.status === "running"
+  const isTableMode = currentMode === "html_table_extract"
 
   const addStep = (type: ActionType) => {
     const newStep = createDefaultStep(type, currentSteps, columns[0])
@@ -126,6 +141,22 @@ export function StepsTab() {
     })
   }
 
+  const togglePickingTarget = (target: PickingTargetType) => {
+    const isAlreadyPickingTarget =
+      executionState?.status === "picking" &&
+      executionState?.pickingTarget === target
+
+    if (isAlreadyPickingTarget) {
+      sendOrchestratorCommand({ type: "CANCEL_PICKING" })
+      return
+    }
+
+    sendOrchestratorCommand({
+      type: "START_PICKING",
+      pickingTarget: target
+    })
+  }
+
   return (
     <div className="space-y-3">
       {/* Workflow Templates Library & JSON Import/Export */}
@@ -133,14 +164,35 @@ export function StepsTab() {
         steps={currentSteps}
         mode={currentMode}
         domListConfig={currentListConfig}
+        tableExtractConfig={currentTableConfig}
         onStepsChange={setSteps}
         onModeChange={setWorkflowMode}
         onDomListConfigChange={setDomListConfig}
+        onTableExtractConfigChange={setTableExtractConfig}
         isRunning={isRunning}
       />
 
       {/* Mode-specific top configuration */}
-      {currentMode === "dom_list_extract" ? (
+      {isTableMode ? (
+        <TableExtractConfigCard
+          config={currentTableConfig}
+          executionState={executionState}
+          isRunning={isRunning}
+          detectedRowCount={executionState?.detectedTableRowCount}
+          detectedColumnCount={executionState?.detectedTableColumnCount}
+          onChange={setTableExtractConfig}
+          onSyncSuccess={(rowCount, colCount) =>
+            setExecutionState({
+              ...(executionState ?? DEFAULT_EXECUTION_STATE),
+              detectedTableRowCount: rowCount,
+              detectedTableColumnCount: colCount
+            })
+          }
+          onPickTableContainer={() => togglePickingTarget("table_container")}
+          onPickHeaderRow={() => togglePickingTarget("table_header_row")}
+          onPickPaginationNext={() => togglePickingTarget("pagination_next")}
+        />
+      ) : currentMode === "dom_list_extract" ? (
         <DomListConfigCard
           config={currentListConfig}
           onChange={setDomListConfig}
@@ -171,83 +223,87 @@ export function StepsTab() {
         </div>
       )}
 
-      {/* Add Step Buttons */}
-      <div className="grid grid-cols-3 gap-1.5">
-        <button
-          type="button"
-          disabled={isRunning}
-          onClick={() => addStep("extract")}
-          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
-          <ScanText className="w-3.5 h-3.5 text-coral-shimmer" />+ Extraer
-        </button>
-        <button
-          type="button"
-          disabled={isRunning}
-          onClick={() => addStep("click")}
-          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
-          <MousePointerClick className="w-3.5 h-3.5 text-fog" />+ Clic
-        </button>
-        <button
-          type="button"
-          disabled={isRunning}
-          onClick={() => addStep("wait")}
-          className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
-          <Clock className="w-3.5 h-3.5 text-amber-400" />+ Espera
-        </button>
-        {currentMode === "records_loop" && (
-          <>
+      {!isTableMode && (
+        <>
+          {/* Add Step Buttons */}
+          <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               disabled={isRunning}
-              onClick={() => addStep("input")}
+              onClick={() => addStep("extract")}
               className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
-              <Type className="w-3.5 h-3.5 text-forest-deep" />+ Texto
+              <ScanText className="w-3.5 h-3.5 text-coral-shimmer" />+ Extraer
             </button>
             <button
               type="button"
               disabled={isRunning}
-              onClick={() => addStep("select")}
+              onClick={() => addStep("click")}
               className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
-              <ListFilter className="w-3.5 h-3.5 text-limestone" />+ Select
+              <MousePointerClick className="w-3.5 h-3.5 text-fog" />+ Clic
             </button>
             <button
               type="button"
               disabled={isRunning}
-              onClick={() => addStep("keypress")}
+              onClick={() => addStep("wait")}
               className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
-              <Keyboard className="w-3.5 h-3.5 text-copper" />+ Tecla
+              <Clock className="w-3.5 h-3.5 text-amber-400" />+ Espera
             </button>
-          </>
-        )}
-      </div>
+            {currentMode === "records_loop" && (
+              <>
+                <button
+                  type="button"
+                  disabled={isRunning}
+                  onClick={() => addStep("input")}
+                  className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
+                  <Type className="w-3.5 h-3.5 text-forest-deep" />+ Texto
+                </button>
+                <button
+                  type="button"
+                  disabled={isRunning}
+                  onClick={() => addStep("select")}
+                  className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
+                  <ListFilter className="w-3.5 h-3.5 text-limestone" />+ Select
+                </button>
+                <button
+                  type="button"
+                  disabled={isRunning}
+                  onClick={() => addStep("keypress")}
+                  className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-ember hover:bg-obsidian disabled:opacity-40 border border-rim hover:border-copper/50 text-parchment font-medium transition">
+                  <Keyboard className="w-3.5 h-3.5 text-copper" />+ Tecla
+                </button>
+              </>
+            )}
+          </div>
 
-      {/* Steps List */}
-      <div className="space-y-2.5">
-        {currentSteps.map((step, index) => {
-          const isPickingThis =
-            executionState?.status === "picking" &&
-            (executionState?.pickingTarget ?? "step") === "step" &&
-            executionState?.pickingForStepId === step.id
+          {/* Steps List */}
+          <div className="space-y-2.5">
+            {currentSteps.map((step, index) => {
+              const isPickingThis =
+                executionState?.status === "picking" &&
+                (executionState?.pickingTarget ?? "step") === "step" &&
+                executionState?.pickingForStepId === step.id
 
-          return (
-            <StepCard
-              key={step.id}
-              step={step}
-              index={index}
-              totalSteps={currentSteps.length}
-              columns={columns}
-              mode={currentMode}
-              isRunning={isRunning}
-              isPickingThis={isPickingThis}
-              onUpdate={updateStep}
-              onRemove={removeStep}
-              onMove={moveStep}
-              onDuplicate={duplicateStep}
-              onTogglePick={startPickingForStep}
-            />
-          )
-        })}
-      </div>
+              return (
+                <StepCard
+                  key={step.id}
+                  step={step}
+                  index={index}
+                  totalSteps={currentSteps.length}
+                  columns={columns}
+                  mode={currentMode}
+                  isRunning={isRunning}
+                  isPickingThis={isPickingThis}
+                  onUpdate={updateStep}
+                  onRemove={removeStep}
+                  onMove={moveStep}
+                  onDuplicate={duplicateStep}
+                  onTogglePick={startPickingForStep}
+                />
+              )
+            })}
+          </div>
+        </>
+      )}
     </div>
   )
 }

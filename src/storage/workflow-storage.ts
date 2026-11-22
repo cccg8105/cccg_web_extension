@@ -5,6 +5,7 @@ import type {
   ExecutionOptions,
   ExecutionState,
   SavedWorkflow,
+  TableExtractConfig,
   WorkflowMode,
   WorkflowStep
 } from "~types/workflow"
@@ -16,12 +17,26 @@ export const workflowStorage = new Storage({
 export const STORAGE_KEYS = {
   WORKFLOW_MODE: "rpa_workflow_mode",
   DOM_LIST_CONFIG: "rpa_dom_list_config",
+  TABLE_EXTRACT_CONFIG: "rpa_table_extract_config",
   EXECUTION_OPTIONS: "rpa_execution_options",
   RECORDS: "rpa_records",
   STEPS: "rpa_steps",
   EXECUTION_STATE: "rpa_execution_state",
   SAVED_WORKFLOWS: "rpa_saved_workflows"
 } as const
+
+export const DEFAULT_TABLE_EXTRACT_CONFIG: TableExtractConfig = {
+  tableSelector: "",
+  headerRowIndex: 1,
+  columns: [],
+  maxRows: 0,
+  pagination: {
+    enabled: false,
+    nextButtonSelector: "",
+    waitAfterClickMs: 2000,
+    maxPages: 5
+  }
+}
 
 export const DEFAULT_WORKFLOW_MODE: WorkflowMode = "records_loop"
 

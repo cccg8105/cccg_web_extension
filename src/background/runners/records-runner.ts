@@ -2,7 +2,9 @@ import {
   appendLogEntry,
   applyStepErrorToResults,
   applyStepSuccessToResults,
+  formatAutoHealLogMessage,
   getExecutionState,
+  persistLearnedStepSelectors,
   updateExecutionState
 } from "~background/state-manager"
 import {
@@ -150,6 +152,13 @@ export async function runRecordsIteration(
       break
     }
 
+    await persistLearnedStepSelectors(currentStep.id, stepResponse)
+    const healLog = formatAutoHealLogMessage(
+      `Reg #${currentRecordIndex + 1}`,
+      currentStep.label,
+      stepResponse
+    )
+
     const rowSlotIndex = (latestState.results ?? []).findIndex(
       (r) => r._row === String(currentRecordIndex + 1)
     )
@@ -174,7 +183,7 @@ export async function runRecordsIteration(
             stepResponse.message
           ),
           logs: appendLogEntry(
-            prev.logs,
+            healLog ? appendLogEntry(prev.logs, healLog) : prev.logs,
             `Advertencia en Reg #${currentRecordIndex + 1} (${currentStep.label}): ${stepResponse.message} -> Saltando al siguiente registro.`
           )
         }))
@@ -194,7 +203,7 @@ export async function runRecordsIteration(
           stepResponse.message
         ),
         logs: appendLogEntry(
-          prev.logs,
+          healLog ? appendLogEntry(prev.logs, healLog) : prev.logs,
           `Error en Registro #${currentRecordIndex + 1} (${currentStep.label}): ${stepResponse.message}`
         )
       }))
@@ -220,7 +229,7 @@ export async function runRecordsIteration(
         isLastStepInRecord
       ),
       logs: appendLogEntry(
-        prev.logs,
+        healLog ? appendLogEntry(prev.logs, healLog) : prev.logs,
         `Reg #${currentRecordIndex + 1}/${endRow} - ${currentStep.label}: ${stepResponse.message}`
       )
     }))

@@ -5,7 +5,16 @@ import {
   stopWorkflowLoop
 } from "~background/runners/orchestrator"
 import { updateExecutionState } from "~background/state-manager"
-import type { OrchestratorCommand } from "~types/workflow"
+import {
+  getActiveTabId,
+  sendMessageToTabWithRetry,
+  syncPickerStateInActiveTab
+} from "~background/tab-messenger"
+import type {
+  InspectTablePagePayload,
+  InspectTablePageResponse,
+  OrchestratorCommand
+} from "~types/workflow"
 
 chrome.runtime.onInstalled.addListener(() => {
   if (chrome.sidePanel?.setPanelBehavior) {
@@ -50,25 +59,53 @@ chrome.runtime.onMessage.addListener(
         }
 
         case "START_PICKING": {
-          await updateExecutionState((prev) => ({
+          const nextState = await updateExecutionState((prev) => ({
             ...prev,
             status: "picking",
             pickingTarget: message.pickingTarget ?? "step",
             pickingForStepId: message.stepId,
             errorMessage: undefined
           }))
+          await syncPickerStateInActiveTab(nextState, message.tabId)
           sendResponse({ ok: true })
           break
         }
 
         case "CANCEL_PICKING": {
-          await updateExecutionState((prev) => ({
+          const nextState = await updateExecutionState((prev) => ({
             ...prev,
             status: "idle",
             pickingTarget: undefined,
             pickingForStepId: undefined
           }))
+          void syncPickerStateInActiveTab(nextState, message.tabId)
           sendResponse({ ok: true })
+          break
+        }
+
+        case "INSPECT_TABLE_IN_ACTIVE_TAB": {
+          try {
+            const tabId = await getActiveTabId(message.tabId)
+            const response = await sendMessageToTabWithRetry<
+              InspectTablePagePayload,
+              InspectTablePageResponse
+            >(tabId, {
+              type: "INSPECT_TABLE_PAGE",
+              tableSelector: message.tableSelector,
+              headerRowIndex: message.headerRowIndex
+            })
+            sendResponse(response)
+          } catch (err) {
+            const errMsg = err instanceof Error ? err.message : String(err)
+            sendResponse({
+              ok: false,
+              message: errMsg,
+              totalRows: 0,
+              dataRowCount: 0,
+              headers: [],
+              pageSignature: ""
+            } satisfies InspectTablePageResponse)
+          }
           break
         }
 

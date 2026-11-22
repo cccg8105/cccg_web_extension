@@ -17,6 +17,7 @@ import {
   DEFAULT_DOM_LIST_CONFIG,
   DEFAULT_EXECUTION_OPTIONS,
   DEFAULT_EXECUTION_STATE,
+  DEFAULT_TABLE_EXTRACT_CONFIG,
   DEFAULT_WORKFLOW_MODE,
   SAMPLE_RECORDS,
   STORAGE_KEYS,
@@ -27,6 +28,7 @@ import type {
   DomListConfig,
   ExecutionOptions,
   ExecutionState,
+  TableExtractConfig,
   WorkflowMode
 } from "~types/workflow"
 
@@ -55,6 +57,14 @@ export function RunTab() {
     DEFAULT_DOM_LIST_CONFIG
   )
 
+  const [tableExtractConfig] = useStorage<TableExtractConfig>(
+    {
+      key: STORAGE_KEYS.TABLE_EXTRACT_CONFIG,
+      instance: workflowStorage
+    },
+    DEFAULT_TABLE_EXTRACT_CONFIG
+  )
+
   const [executionOptions, setExecutionOptions] = useStorage<ExecutionOptions>(
     {
       key: STORAGE_KEYS.EXECUTION_OPTIONS,
@@ -79,15 +89,20 @@ export function RunTab() {
 
   const currentMode = workflowMode ?? DEFAULT_WORKFLOW_MODE
   const isDomListMode = currentMode === "dom_list_extract"
+  const isTableMode = currentMode === "html_table_extract"
   const currentOptions = executionOptions ?? DEFAULT_EXECUTION_OPTIONS
   const isRunningOrPaused =
     executionState?.status === "running" || executionState?.status === "paused"
 
-  const rawTotalRecords = isDomListMode
+  const rawTotalRecords = isTableMode
     ? executionState?.totalItemsInCurrentPage ??
-      executionState?.detectedListCount ??
+      executionState?.detectedTableRowCount ??
       0
-    : records?.length ?? 0
+    : isDomListMode
+      ? executionState?.totalItemsInCurrentPage ??
+        executionState?.detectedListCount ??
+        0
+      : records?.length ?? 0
 
   const startRow = Math.max(1, Number(currentOptions.startRow || 1))
   const effectiveEndRow =
@@ -127,9 +142,53 @@ export function RunTab() {
         : 0
 
   const currentPage = executionState?.currentPage ?? 1
-  const paginationEnabled = Boolean(domListConfig?.pagination?.enabled)
-  const maxPages = domListConfig?.pagination?.maxPages ?? 5
+  const paginationEnabled = isTableMode
+    ? Boolean(tableExtractConfig?.pagination?.enabled)
+    : isDomListMode
+      ? Boolean(domListConfig?.pagination?.enabled)
+      : false
+  const maxPages = isTableMode
+    ? (tableExtractConfig?.pagination?.maxPages ?? 5)
+    : (domListConfig?.pagination?.maxPages ?? 5)
   const skippedCount = executionState?.skippedOrErrorCount ?? 0
+
+  const progressSubtitle = isTableMode
+    ? paginationEnabled
+      ? `Extracción de tabla · Página ${currentPage} (máx. ${maxPages})`
+      : "Extracción de tabla HTML en página actual"
+    : isDomListMode
+      ? paginationEnabled
+        ? `Extracción de lista · Página ${currentPage} (máx. ${maxPages})`
+        : "Extracción de lista en página actual"
+      : "Progreso de iteración por registros"
+
+  const progressHeadline = isTableMode
+    ? executionState?.status === "completed"
+      ? `${validResults.length} fila(s) extraídas en total`
+      : rawTotalRecords > 0
+        ? `Fila #${currentRecordNumber} de ${effectiveEndRow} (Total: ${validResults.length})`
+        : "Listo para inspeccionar y extraer tabla HTML"
+    : isDomListMode
+      ? executionState?.status === "completed"
+        ? `${validResults.length} elemento(s) procesados en total`
+        : rawTotalRecords > 0
+          ? `Elemento #${currentRecordNumber} de ${effectiveEndRow} (Total: ${validResults.length})`
+          : "Listo para inspeccionar y extraer lista"
+      : executionState?.status === "completed"
+        ? `${validResults.length} registro(s) procesados en rango`
+        : `Registro #${currentRecordNumber} de ${effectiveEndRow}`
+
+  const completedBannerText = isTableMode
+    ? `Extracción de tabla finalizada (${validResults.length} fila(s) en reporte${skippedCount > 0 ? `, ${skippedCount} con error` : ""}).`
+    : isDomListMode
+      ? `Extracción finalizada (${validResults.length} fila(s) en reporte${skippedCount > 0 ? `, ${skippedCount} con error` : ""}).`
+      : `Iteración finalizada (${validResults.length} fila(s) en reporte${skippedCount > 0 ? `, ${skippedCount} con error` : ""}).`
+
+  const startButtonLabel = isTableMode
+    ? "Iniciar Extracción de Tabla"
+    : isDomListMode
+      ? "Iniciar Extracción de Lista"
+      : `Iniciar Iteración (${totalInRange})`
 
   return (
     <div className="space-y-3">
@@ -145,23 +204,9 @@ export function RunTab() {
       <div className="bg-ember border border-rim rounded-lg p-3 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-ash text-[11px]">
-              {isDomListMode
-                ? paginationEnabled
-                  ? `Extracción de lista · Página ${currentPage} (máx. ${maxPages})`
-                  : "Extracción de lista en página actual"
-                : "Progreso de iteración por registros"}
-            </div>
+            <div className="text-ash text-[11px]">{progressSubtitle}</div>
             <div className="text-sm font-medium text-parchment">
-              {isDomListMode
-                ? executionState?.status === "completed"
-                  ? `${validResults.length} elemento(s) procesados en total`
-                  : rawTotalRecords > 0
-                    ? `Elemento #${currentRecordNumber} de ${effectiveEndRow} (Total: ${validResults.length})`
-                    : "Listo para inspeccionar y extraer lista"
-                : executionState?.status === "completed"
-                  ? `${validResults.length} registro(s) procesados en rango`
-                  : `Registro #${currentRecordNumber} de ${effectiveEndRow}`}
+              {progressHeadline}
             </div>
           </div>
           <span className="text-sm font-mono font-bold text-coral-shimmer">
@@ -199,11 +244,7 @@ export function RunTab() {
         {executionState?.status === "completed" && (
           <div className="flex items-center gap-2 p-2.5 rounded bg-forest-moss border border-forest-deep text-fog text-[11px]">
             <CheckCircle2 className="w-4 h-4 text-coral-shimmer shrink-0" />
-            <span>
-              {isDomListMode
-                ? `Extracción finalizada (${validResults.length} fila(s) en reporte${skippedCount > 0 ? `, ${skippedCount} con error` : ""}).`
-                : `Iteración finalizada (${validResults.length} fila(s) en reporte${skippedCount > 0 ? `, ${skippedCount} con error` : ""}).`}
-            </span>
+            <span>{completedBannerText}</span>
           </div>
         )}
 
@@ -218,9 +259,7 @@ export function RunTab() {
                 }
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-parchment hover:bg-fog text-void-black font-semibold shadow-sm transition">
                 <Play className="w-4 h-4 fill-void-black" />
-                {isDomListMode
-                  ? "Iniciar Extracción de Lista"
-                  : `Iniciar Iteración (${totalInRange})`}
+                {startButtonLabel}
               </button>
             )}
 

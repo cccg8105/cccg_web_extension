@@ -123,22 +123,22 @@ La arquitectura modular implementada en `v0.4.1` — `v1.0.1` permite integrar e
 ```mermaid
 flowchart LR
   subgraph TypesLayer ["1. Contratos (src/types/workflow.ts)"]
-    StepType["WorkflowStep<br/>+ selectorCandidates?: SelectorCandidate[]<br/>+ targetFingerprint?: ElementFingerprint"]
-    RespType["ExecuteStepResponse<br/>+ updatedCandidates?: SelectorCandidate[]<br/>+ healedSelector?: string"]
+    StepType["WorkflowStep\n+ selectorCandidates?: SelectorCandidate[]\n+ targetFingerprint?: ElementFingerprint"]
+    RespType["ExecuteStepResponse\n+ updatedCandidates?: SelectorCandidate[]\n+ healedSelector?: string"]
   end
 
   subgraph ContentLayer ["2. Content Scripts (src/contents/)"]
-    PickerCS["picker-overlay.tsx<br/>Genera Fingerprint F + Pool inicial A"]
-    RLModule["selector-rl-engine.ts (Nuevo)<br/>UCB1 + Sim(e, F) + Q-Update + Self-Healing"]
-    ExecCS["action-executor.ts<br/>Usa RLModule en resolveStepTargetElement()"]
+    PickerCS["picker-overlay.tsx\nGenera Fingerprint F + Pool inicial A"]
+    RLModule["helpers/selector-rl-engine.ts + dom-selectors.ts\nUCB1 + Sim(e, F) + Q-Update + Self-Healing"]
+    ExecCS["action-executor.ts\nUsa RLModule en resolveStepTargetElement()"]
   end
 
   subgraph BackgroundLayer ["3. Service Worker (src/background/)"]
-    Runners["records-runner.ts / dom-list-runner.ts<br/>Persiste updatedCandidates en STORAGE_KEYS.STEPS"]
+    Runners["records-runner.ts / dom-list-runner.ts\nPersiste updatedCandidates en STORAGE_KEYS.STEPS"]
   end
 
   subgraph UILayer ["4. Side Panel UI (src/sidepanel/)"]
-    StepCardUI["StepCard.tsx<br/>Muestra insignia de selectores aprendidos y Q-score"]
+    StepCardUI["StepCard.tsx\nMuestra insignia de selectores aprendidos y Q-score"]
   end
 
   PickerCS --> StepType
@@ -204,13 +204,13 @@ export interface ExecuteStepResponse {
 
 ### 4.2 Capa 2: Content Scripts (`src/contents/`)
 
-1. **Nuevo módulo dedicado `src/contents/selector-rl-engine.ts`:**
-   Encapsula toda la matemática del agente para mantener limpio `action-executor.ts`:
-   - `buildElementFingerprint(el: Element, container?: Element): ElementFingerprint`
-   - `computeSimilarityScore(candidateEl: Element, fingerprint: ElementFingerprint, container?: Element): number`
-   - `rankCandidatesByUCB1(candidates: SelectorCandidate[]): SelectorCandidate[]`
+1. **Módulos dedicados `src/contents/helpers/selector-rl-engine.ts` y `src/contents/helpers/dom-selectors.ts`:**
+   Encapsulan la generación compartida de selectores y toda la matemática del agente para mantener limpio `action-executor.ts` (y evitar que Plasmo registre archivos directos de `src/contents/` como un *content script* adicional):
+   - `buildElementFingerprint(el: Element, container?: Element, step?: Partial<WorkflowStep>): ElementFingerprint`
+   - `computeSimilarityScore(candidateEl: Element, fingerprint: ElementFingerprint, container?: Element, step?: Partial<WorkflowStep>): number`
+   - `rankCandidatesByUCB1(candidates: SelectorCandidate[], preferredPrimarySelector?: string): SelectorCandidate[]`
    - `updateCandidateQValue(candidate: SelectorCandidate, reward: number, alpha = 0.2): SelectorCandidate`
-   - `exploreAndHealInContainer(container: Element, fingerprint: ElementFingerprint): { element: HTMLElement; synthesizedSelector: string; similarity: number } | null`
+   - `exploreAndHealInContainer(container: Element, fingerprint: ElementFingerprint, step?: Partial<WorkflowStep>): { element: HTMLElement; synthesizedSelector: string; similarity: number } | null`
 
 2. **Captura de Huella y Pool Inicial en [`src/contents/picker-overlay.tsx`](../src/contents/picker-overlay.tsx):**
    - Al hacer clic sobre un elemento para configurar un paso (`pickingTarget === "step"`), además de asignar `step.selector` (el mejor candidato inicial), guarda:

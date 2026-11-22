@@ -1,14 +1,12 @@
 const fs = require("fs")
 const path = require("path")
 
-const buildDirs = [
-  path.resolve(__dirname, "..", "build", "chrome-mv3-prod"),
-  path.resolve(__dirname, "..", "build", "chrome-mv3-dev")
-]
+const prodDir = path.resolve(__dirname, "..", "build", "chrome-mv3-prod")
+const devDir = path.resolve(__dirname, "..", "build", "chrome-mv3-dev")
 
-for (const dir of buildDirs) {
+function cleanManifestInDir(dir) {
   const manifestPath = path.join(dir, "manifest.json")
-  if (!fs.existsSync(manifestPath)) continue
+  if (!fs.existsSync(manifestPath)) return
 
   try {
     const raw = fs.readFileSync(manifestPath, "utf8")
@@ -52,3 +50,42 @@ for (const dir of buildDirs) {
     console.error(`[clean-manifest] Error procesando ${manifestPath}:`, err)
   }
 }
+
+function syncProdToDevIfPresent() {
+  if (!fs.existsSync(prodDir)) return
+
+  try {
+    if (fs.existsSync(devDir)) {
+      fs.rmSync(devDir, { recursive: true, force: true })
+    }
+    fs.cpSync(prodDir, devDir, { recursive: true })
+
+    const devManifestPath = path.join(devDir, "manifest.json")
+    if (fs.existsSync(devManifestPath)) {
+      const devManifest = JSON.parse(fs.readFileSync(devManifestPath, "utf8"))
+      if (
+        typeof devManifest.name === "string" &&
+        !devManifest.name.startsWith("DEV |")
+      ) {
+        devManifest.name = `DEV | ${devManifest.name}`
+      }
+      fs.writeFileSync(
+        devManifestPath,
+        JSON.stringify(devManifest, null, 2),
+        "utf8"
+      )
+    }
+    console.log(
+      `[clean-manifest] Sincronizado build actualizado hacia: ${devDir}`
+    )
+  } catch (err) {
+    console.error(
+      `[clean-manifest] Error sincronizando prod -> dev (${devDir}):`,
+      err
+    )
+  }
+}
+
+cleanManifestInDir(prodDir)
+syncProdToDevIfPresent()
+cleanManifestInDir(devDir)

@@ -87,6 +87,12 @@ Extensión de Chrome construida con **Plasmo**, **React**, **TypeScript** y **Ta
    - Puedes **Pausar**, **Reanudar** o **Detener** el proceso en cualquier momento.
    - En la **Bitácora de ejecución** verás el detalle en tiempo real de cada registro y acción ejecutada.
 
+### Modo Alternativo: Extracción de Tablas HTML (`Tabla HTML`)
+1. Selecciona el modo **Tabla HTML** en la barra superior del Side Panel.
+2. Pulsa **Elegir tabla** y haz clic sobre cualquier `<table>` en la página web activa.
+3. Ajusta el número de **Fila cabecera** manualmente o usa **Marcar fila** para hacer clic directamente sobre el `<tr>` que contiene los encabezados (solo se extraerán las filas posteriores).
+4. Personaliza por cada columna detectada el nombre en el CSV y el origen del dato (**Texto visible**, **Valor** o **Atributo HTML** como `href`/`src`), habilita **Paginación automática** si aplica y ejecuta desde la pestaña **Ejecutar**.
+
 ---
 
 ## 4. Documentación de Arquitectura y Desarrollo (`docs/`)
@@ -116,7 +122,7 @@ Si vas a realizar cambios o agregar nuevas capacidades a la extensión, consulta
 │   ├── HISTORIAL.md                # Registro histórico de versiones y features completadas
 │   ├── _TEMPLATE-feature.md        # Plantilla estándar para especificar nuevas features
 │   └── features/                   # Especificaciones técnicas pendientes (Post-v1.0.0)
-│       └── completed/              # Archivo de especificaciones ya implementadas (F-01..F-09, F-12..F-15)
+│       └── completed/              # Archivo de especificaciones ya implementadas (F-01..F-09, F-12..F-17, F-19)
 ├── docs/
 │   ├── README.md                   # Índice de la documentación técnica
 │   ├── 01-arquitectura-y-flujo.md  # Contextos MV3, diagramas de secuencia y estados
@@ -133,21 +139,26 @@ Si vas a realizar cambios o agregar nuevas capacidades a la extensión, consulta
 │   │   └── runners/
 │   │       ├── orchestrator.ts     # Control de ciclo de vida del bucle y selección de modo
 │   │       ├── records-runner.ts   # Estrategia Modo 1: Iteración por lista de registros (CSV/JSON)
-│   │       └── dom-list-runner.ts  # Estrategia Modo 2: Extracción de listas DOM y paginación automática
+│   │       ├── dom-list-runner.ts  # Estrategia Modo 2: Extracción de listas DOM y paginación automática
+│   │       └── table-runner.ts     # Estrategia Modo 3: Extracción estructurada de tablas HTML paginadas
 │   ├── contents/
-│   │   ├── picker-overlay.tsx      # Inspector visual DOM (elementos, contenedores repetitivos y paginación)
-│   │   └── action-executor.ts      # Ejecutor DOM (EXECUTE_STEP, INSPECT_LIST_PAGE y CLICK_NEXT_PAGE)
+│   │   ├── helpers/
+│   │   │   ├── dom-selectors.ts    # Utilidades puras de generación, limpieza y síntesis de selectores CSS
+│   │   │   └── selector-rl-engine.ts # Motor de selectores autocurativos (UCB1, Q-Learning y similitud por huella F)
+│   │   ├── picker-overlay.tsx      # Inspector visual DOM (elementos, contenedores, tablas <table>, filas <tr> y paginación)
+│   │   └── action-executor.ts      # Ejecutor DOM (EXECUTE_STEP, INSPECT_LIST_PAGE, INSPECT_TABLE_PAGE, EXTRACT_TABLE_ROW y CLICK_NEXT_PAGE)
 │   ├── sidepanel/
 │   │   ├── index.tsx               # Shell principal, selector de modo y navegación de pestañas
 │   │   ├── components/
 │   │   │   ├── SidePanelHeader.tsx # Encabezado e insignia de estado reactiva
-│   │   │   ├── ModeSelectorBar.tsx # Selector de modo (Iterar Registros CSV vs Extraer Lista Web)
+│   │   │   ├── ModeSelectorBar.tsx # Selector de modo (Registros, Lista Web y Tabla HTML)
 │   │   │   ├── DomListConfigCard.tsx # Configuración de contenedor repetitivo y paginación automática
+│   │   │   ├── TableExtractConfigCard.tsx # Configuración de tabla HTML, fila cabecera y columnas
 │   │   │   ├── ExecutionOptionsCard.tsx # Configuración de resiliencia (stop/skip) y rango de iteración
 │   │   │   ├── WorkflowLibraryCard.tsx # Biblioteca local de flujos e importación/exportación JSON
 │   │   │   ├── StepCard.tsx        # Tarjeta individual de edición de un paso
 │   │   │   └── tabs/
-│   │   │       ├── StepsTab.tsx    # Pestaña 1: Configuración de pasos, lista DOM y plantillas
+│   │   │       ├── StepsTab.tsx    # Pestaña 1: Configuración de pasos, lista DOM, tabla HTML y plantillas
 │   │   │       ├── DataTab.tsx     # Pestaña 2: Carga y vista previa de registros CSV/JSON
 │   │   │       └── RunTab.tsx      # Pestaña 3: Controles de ejecución, reporte CSV y bitácora
 │   │   └── utils/

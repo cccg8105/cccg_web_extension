@@ -3,7 +3,9 @@ import {
   appendLogEntry,
   applyStepErrorToResults,
   applyStepSuccessToResults,
+  formatAutoHealLogMessage,
   getExecutionState,
+  persistLearnedStepSelectors,
   updateExecutionState
 } from "~background/state-manager"
 import {
@@ -381,6 +383,13 @@ export async function runDomListExtraction(
       break
     }
 
+    await persistLearnedStepSelectors(currentStep.id, stepResponse)
+    const healLog = formatAutoHealLogMessage(
+      `Pág ${currentPage} Ítem #${currentRecordIndex + 1}`,
+      currentStep.label,
+      stepResponse
+    )
+
     const globalRowIndex = resolveCurrentGlobalRowIndex(latestState.results)
 
     if (!stepResponse.ok) {
@@ -397,7 +406,7 @@ export async function runDomListExtraction(
             stepResponse.message
           ),
           logs: appendLogEntry(
-            prev.logs,
+            healLog ? appendLogEntry(prev.logs, healLog) : prev.logs,
             `Advertencia en Pág ${currentPage} Ítem #${currentRecordIndex + 1} (${currentStep.label}): ${stepResponse.message} -> Saltando al siguiente ítem.`
           )
         }))
@@ -417,7 +426,7 @@ export async function runDomListExtraction(
           stepResponse.message
         ),
         logs: appendLogEntry(
-          prev.logs,
+          healLog ? appendLogEntry(prev.logs, healLog) : prev.logs,
           `Error en Pág ${currentPage} Ítem #${currentRecordIndex + 1} (${currentStep.label}): ${stepResponse.message}`
         )
       }))
@@ -443,7 +452,7 @@ export async function runDomListExtraction(
         isLastStepInItem
       ),
       logs: appendLogEntry(
-        prev.logs,
+        healLog ? appendLogEntry(prev.logs, healLog) : prev.logs,
         `Pág ${currentPage} Ítem #${currentRecordIndex + 1}/${itemsOnPage} - ${currentStep.label}: ${stepResponse.message}`
       )
     }))

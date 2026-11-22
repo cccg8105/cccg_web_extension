@@ -1,6 +1,8 @@
 {
-  "0": "workflow-storage.ts",
-  "5": "workflow-io.ts",
-  "9": "ExecutionState",
+  "0": "StepsTab.tsx",
+  "2": "Sincronización Obligatoria tras Cambios en Features (`src/`)",
+  "3": "action-executor.ts",
+  "6": "picker-overlay.tsx",
+  "9": "workflow.ts",
   "11": "clean-manifest.js"
 }

@@ -3,13 +3,27 @@ import type {
   ActionType,
   DataRecord,
   DomListConfig,
+  ElementFingerprint,
   ErrorHandlingPolicy,
   ExecutionOptions,
   ExportedWorkflowFile,
   ExtractSourceType,
+  PaginationConfig,
+  SelectorCandidate,
+  TableExtractColumnConfig,
+  TableExtractConfig,
+  TextPatternType,
   WorkflowMode,
   WorkflowStep
 } from "~types/workflow"
+
+const VALID_TEXT_PATTERNS: TextPatternType[] = [
+  "currency",
+  "number",
+  "url",
+  "text",
+  "empty"
+]
 
 const VALID_ACTION_TYPES: ActionType[] = [
   "click",
@@ -26,7 +40,11 @@ const VALID_EXTRACT_SOURCES: ExtractSourceType[] = [
   "attribute"
 ]
 
-const VALID_MODES: WorkflowMode[] = ["records_loop", "dom_list_extract"]
+const VALID_MODES: WorkflowMode[] = [
+  "records_loop",
+  "dom_list_extract",
+  "html_table_extract"
+]
 
 export type WorkflowImportValidationResult =
   | {
@@ -35,9 +53,32 @@ export type WorkflowImportValidationResult =
       name?: string
       mode?: WorkflowMode
       domListConfig?: DomListConfig
+      tableExtractConfig?: TableExtractConfig
       executionOptions?: ExecutionOptions
     }
   | { ok: false; error: string }
+
+function sanitizePaginationConfig(
+  rawPagination: unknown
+): PaginationConfig | undefined {
+  if (!rawPagination || typeof rawPagination !== "object") {
+    return undefined
+  }
+  const pag = rawPagination as Record<string, unknown>
+  return {
+    enabled: Boolean(pag.enabled),
+    nextButtonSelector:
+      typeof pag.nextButtonSelector === "string"
+        ? pag.nextButtonSelector
+        : "",
+    waitAfterClickMs:
+      typeof pag.waitAfterClickMs === "number" && pag.waitAfterClickMs >= 100
+        ? pag.waitAfterClickMs
+        : 2000,
+    maxPages:
+      typeof pag.maxPages === "number" && pag.maxPages >= 1 ? pag.maxPages : 5
+  }
+}
 
 function sanitizeDomListConfig(rawConfig: unknown): DomListConfig | undefined {
   if (!rawConfig || typeof rawConfig !== "object") {
@@ -51,30 +92,67 @@ function sanitizeDomListConfig(rawConfig: unknown): DomListConfig | undefined {
       ? obj.maxItems
       : undefined
 
-  let pagination: DomListConfig["pagination"]
-  if (obj.pagination && typeof obj.pagination === "object") {
-    const pag = obj.pagination as Record<string, unknown>
-    pagination = {
-      enabled: Boolean(pag.enabled),
-      nextButtonSelector:
-        typeof pag.nextButtonSelector === "string"
-          ? pag.nextButtonSelector
-          : "",
-      waitAfterClickMs:
-        typeof pag.waitAfterClickMs === "number" && pag.waitAfterClickMs >= 100
-          ? pag.waitAfterClickMs
-          : 2000,
-      maxPages:
-        typeof pag.maxPages === "number" && pag.maxPages >= 1
-          ? pag.maxPages
-          : 5
-    }
-  }
-
   return {
     itemSelector,
     maxItems,
-    pagination
+    pagination: sanitizePaginationConfig(obj.pagination)
+  }
+}
+
+function sanitizeTableExtractConfig(
+  rawConfig: unknown
+): TableExtractConfig | undefined {
+  if (!rawConfig || typeof rawConfig !== "object") {
+    return undefined
+  }
+  const obj = rawConfig as Record<string, unknown>
+  const tableSelector =
+    typeof obj.tableSelector === "string" ? obj.tableSelector : ""
+  const headerRowIndex =
+    typeof obj.headerRowIndex === "number" && obj.headerRowIndex >= 1
+      ? Math.floor(obj.headerRowIndex)
+      : 1
+  const maxRows =
+    typeof obj.maxRows === "number" && obj.maxRows >= 0
+      ? Math.floor(obj.maxRows)
+      : undefined
+
+  const rawCols = Array.isArray(obj.columns) ? obj.columns : []
+  const columns: TableExtractColumnConfig[] = []
+  for (let i = 0; i < rawCols.length; i++) {
+    const col = rawCols[i]
+    if (!col || typeof col !== "object") continue
+    const colObj = col as Record<string, unknown>
+    const index =
+      typeof colObj.index === "number" && colObj.index >= 0
+        ? Math.floor(colObj.index)
+        : i
+    const source: ExtractSourceType =
+      typeof colObj.source === "string" &&
+      VALID_EXTRACT_SOURCES.includes(colObj.source as ExtractSourceType)
+        ? (colObj.source as ExtractSourceType)
+        : "textContent"
+    const name =
+      typeof colObj.name === "string" && colObj.name.trim()
+        ? colObj.name.trim()
+        : `columna_${index + 1}`
+    const attribute =
+      typeof colObj.attribute === "string" ? colObj.attribute : undefined
+
+    columns.push({
+      index,
+      name,
+      source,
+      attribute
+    })
+  }
+
+  return {
+    tableSelector,
+    headerRowIndex,
+    columns,
+    maxRows,
+    pagination: sanitizePaginationConfig(obj.pagination)
   }
 }
 
@@ -103,18 +181,135 @@ function sanitizeExecutionOptions(
   }
 }
 
+function sanitizeStringArray(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  return raw.filter((item): item is string => typeof item === "string")
+}
+
+function sanitizeSelectorCandidates(
+  raw: unknown
+): SelectorCandidate[] | undefined {
+  if (!Array.isArray(raw)) return undefined
+  const out: SelectorCandidate[] = []
+
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue
+    const obj = item as Record<string, unknown>
+    if (typeof obj.selector !== "string" || !obj.selector.trim()) continue
+
+    const qValue =
+      typeof obj.qValue === "number" && Number.isFinite(obj.qValue)
+        ? Math.max(-1, Math.min(1, obj.qValue))
+        : 0.5
+    const successCount =
+      typeof obj.successCount === "number" && obj.successCount >= 0
+        ? Math.floor(obj.successCount)
+        : 0
+    const failCount =
+      typeof obj.failCount === "number" && obj.failCount >= 0
+        ? Math.floor(obj.failCount)
+        : 0
+    const source: "initial" | "healed" =
+      obj.source === "healed" ? "healed" : "initial"
+
+    out.push({
+      selector: obj.selector.trim(),
+      qValue,
+      successCount,
+      failCount,
+      source
+    })
+  }
+
+  return out.length > 0 ? out : undefined
+}
+
+function sanitizeElementFingerprint(
+  raw: unknown
+): ElementFingerprint | undefined {
+  if (!raw || typeof raw !== "object") return undefined
+  const obj = raw as Record<string, unknown>
+  if (typeof obj.tagName !== "string" || !obj.tagName.trim()) {
+    return undefined
+  }
+
+  const textPattern: TextPatternType =
+    typeof obj.textPattern === "string" &&
+    VALID_TEXT_PATTERNS.includes(obj.textPattern as TextPatternType)
+      ? (obj.textPattern as TextPatternType)
+      : "text"
+
+  let relativeBox: ElementFingerprint["relativeBox"]
+  if (obj.relativeBox && typeof obj.relativeBox === "object") {
+    const box = obj.relativeBox as Record<string, unknown>
+    if (
+      typeof box.topRatio === "number" &&
+      Number.isFinite(box.topRatio) &&
+      typeof box.leftRatio === "number" &&
+      Number.isFinite(box.leftRatio)
+    ) {
+      relativeBox = {
+        topRatio: Math.max(0, Math.min(1, box.topRatio)),
+        leftRatio: Math.max(0, Math.min(1, box.leftRatio))
+      }
+    }
+  }
+
+  return {
+    tagName: obj.tagName.trim().toLowerCase(),
+    stableClasses: sanitizeStringArray(obj.stableClasses),
+    parentClasses: sanitizeStringArray(obj.parentClasses),
+    attributeNames: sanitizeStringArray(obj.attributeNames),
+    textPattern,
+    ...(typeof obj.roleHint === "string" && obj.roleHint.trim()
+      ? { roleHint: obj.roleHint.trim().toLowerCase() }
+      : {}),
+    ...(relativeBox ? { relativeBox } : {})
+  }
+}
+
 export function parseAndValidateWorkflowJson(
   rawText: string
 ): WorkflowImportValidationResult {
   try {
     const raw = JSON.parse(rawText)
+    const isEnvelope = Boolean(
+      raw && typeof raw === "object" && !Array.isArray(raw)
+    )
+    const envelope = isEnvelope ? (raw as ExportedWorkflowFile) : undefined
+
+    const importedName =
+      envelope && typeof envelope.name === "string" ? envelope.name : undefined
+    const importedMode =
+      envelope &&
+      typeof envelope.mode === "string" &&
+      VALID_MODES.includes(envelope.mode as WorkflowMode)
+        ? (envelope.mode as WorkflowMode)
+        : undefined
+    const importedDomListConfig = envelope
+      ? sanitizeDomListConfig(envelope.domListConfig)
+      : undefined
+    const importedTableExtractConfig = envelope
+      ? sanitizeTableExtractConfig(envelope.tableExtractConfig)
+      : undefined
+    const importedExecutionOptions = envelope
+      ? sanitizeExecutionOptions(envelope.executionOptions)
+      : undefined
+
     const candidateSteps: unknown = Array.isArray(raw)
       ? raw
       : raw && typeof raw === "object" && "steps" in raw
         ? (raw as ExportedWorkflowFile).steps
         : null
 
-    if (!Array.isArray(candidateSteps) || candidateSteps.length === 0) {
+    const allowEmptySteps =
+      importedMode === "html_table_extract" ||
+      Boolean(importedTableExtractConfig?.tableSelector?.trim())
+
+    if (
+      !Array.isArray(candidateSteps) ||
+      (candidateSteps.length === 0 && !allowEmptySteps)
+    ) {
       return {
         ok: false,
         error: "El archivo JSON no contiene una lista válida de pasos."
@@ -146,6 +341,8 @@ export function parseAndValidateWorkflowJson(
         label: item.label,
         selector:
           typeof item.selector === "string" ? item.selector : undefined,
+        selectorCandidates: sanitizeSelectorCandidates(item.selectorCandidates),
+        targetFingerprint: sanitizeElementFingerprint(item.targetFingerprint),
         valueTemplate:
           typeof item.valueTemplate === "string"
             ? item.valueTemplate
@@ -170,32 +367,13 @@ export function parseAndValidateWorkflowJson(
       })
     }
 
-    const isEnvelope = Boolean(
-      raw && typeof raw === "object" && !Array.isArray(raw)
-    )
-    const envelope = isEnvelope ? (raw as ExportedWorkflowFile) : undefined
-
-    const importedName =
-      envelope && typeof envelope.name === "string" ? envelope.name : undefined
-    const importedMode =
-      envelope &&
-      typeof envelope.mode === "string" &&
-      VALID_MODES.includes(envelope.mode as WorkflowMode)
-        ? (envelope.mode as WorkflowMode)
-        : undefined
-    const importedDomListConfig = envelope
-      ? sanitizeDomListConfig(envelope.domListConfig)
-      : undefined
-    const importedExecutionOptions = envelope
-      ? sanitizeExecutionOptions(envelope.executionOptions)
-      : undefined
-
     return {
       ok: true,
       steps: validatedSteps,
       name: importedName,
       mode: importedMode,
       domListConfig: importedDomListConfig,
+      tableExtractConfig: importedTableExtractConfig,
       executionOptions: importedExecutionOptions
     }
   } catch {
@@ -211,7 +389,8 @@ export function exportWorkflowToJsonFile(
   steps: WorkflowStep[],
   mode?: WorkflowMode,
   domListConfig?: DomListConfig,
-  executionOptions?: ExecutionOptions
+  executionOptions?: ExecutionOptions,
+  tableExtractConfig?: TableExtractConfig
 ): void {
   const exportPayload: ExportedWorkflowFile = {
     version: "1.0.0",
@@ -219,6 +398,7 @@ export function exportWorkflowToJsonFile(
     name: workflowName.trim() || "Flujo AutoLoop",
     mode,
     domListConfig,
+    tableExtractConfig,
     executionOptions,
     steps
   }

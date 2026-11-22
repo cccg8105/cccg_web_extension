@@ -56,6 +56,32 @@ export function moveStepInList(
   return copy
 }
 
+export function cloneWorkflowStep(step: WorkflowStep): WorkflowStep {
+  return {
+    ...step,
+    ...(Array.isArray(step.selectorCandidates)
+      ? {
+          selectorCandidates: step.selectorCandidates.map((cand) => ({
+            ...cand
+          }))
+        }
+      : {}),
+    ...(step.targetFingerprint
+      ? {
+          targetFingerprint: {
+            ...step.targetFingerprint,
+            stableClasses: [...step.targetFingerprint.stableClasses],
+            parentClasses: [...step.targetFingerprint.parentClasses],
+            attributeNames: [...step.targetFingerprint.attributeNames],
+            ...(step.targetFingerprint.relativeBox
+              ? { relativeBox: { ...step.targetFingerprint.relativeBox } }
+              : {})
+          }
+        }
+      : {})
+  }
+}
+
 export function duplicateStepInList(
   steps: WorkflowStep[],
   index: number
@@ -64,8 +90,9 @@ export function duplicateStepInList(
   if (!source) {
     return steps
   }
+  const cloned = cloneWorkflowStep(source)
   const duplicated: WorkflowStep = {
-    ...source,
+    ...cloned,
     id: `step-${Date.now()}`,
     label: `${source.label} (copia)`
   }
