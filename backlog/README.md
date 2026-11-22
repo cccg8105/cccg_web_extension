@@ -59,3 +59,13 @@ El número de versión en [`package.json`](../package.json) determina la versió
 2. Mueve el archivo desde `backlog/features/F-XX-....md` hacia `backlog/features/completed/F-XX-....md`.
 3. Registra la feature completada en [`HISTORIAL.md`](./HISTORIAL.md) (apuntando a `./features/completed/F-XX-....md`) y retírala de [`BACKLOG.md`](./BACKLOG.md).
 4. Cuando se completen todas las features de una versión, retira el bloque de esa versión de [`BACKLOG.md`](./BACKLOG.md), consolídalo en [`HISTORIAL.md`](./HISTORIAL.md) e incrementa el campo `"version"` en [`package.json`](../package.json).
+
+### Paso 4: Publicar Tag y Release en GitHub
+1. Asegúrate de que los PRs de las features objetivo ya estén mergeados en `main` y el estado en `main` esté actualizado (`git checkout main && git pull`).
+2. Verifica que `"version"` en [`package.json`](../package.json) coincida con la versión a liberar (ej. `1.1.0`) y haz commit en `main` (vía PR si aplica) con formato `chore(release): v1.1.0`.
+3. Crea un tag anotado sobre `main` y publícalo en `origin`:
+   ```bash
+   git tag -a v1.1.0 -m "Release v1.1.0"
+   git push origin v1.1.0
+   ```
+4. El workflow [`.github/workflows/release.yml`](../.github/workflows/release.yml) se ejecutará automáticamente, compilará la extensión, generará el `.zip` y publicará el **GitHub Release** con las notas de versión.

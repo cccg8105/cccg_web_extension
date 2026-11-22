@@ -25,6 +25,7 @@
 | :---: | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
 | **1** | `[ ]` | **F-18** | Motor de Selectores Autocurativos con Aprendizaje por Refuerzo (*Multi-Armed Bandit UCB1 + $Q$-Learning*) | **Alta** | L | `types`, `contents`, `background`, `sidepanel` | [Ver F-18](./features/F-18-selectores-autocurativos-rl.md) |
 | **2** | `[ ]` | **F-11** | Condicionales simples por paso (*Ejecutar paso solo si el selector existe / Paso opcional*) | **Media-Alta** | M | `types`, `contents`, `sidepanel` | [Ver F-11](./features/F-11-condicionales-simples-por-paso.md) |
+| **3** | `[ ]` | **F-20** | Selector de separador para exportación de datos extraídos (CSV: `,`, `;`, `\t`, `\|`) | **Media** | S | `storage`, `sidepanel` | [Ver F-20](./features/F-20-selector-separador-exportacion-csv.md) |
 
 ---
 
